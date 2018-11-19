@@ -14,6 +14,12 @@ $ eks create-nodegroup --cluster-name My-EKS-Cluster --group-name other-nodes --
 $ eks create-nodegroup --all --cluster-name My-EKS-Cluster --yes
 ```
 
+## Prerequisite
+
+1. Ruby
+2. `kubectl` with version > 10 on your `PATH`
+3. `aws-iam-authenticator` on your `PATH`
+
 ## Extra Stuff
 
 ### Setting IAM policies to be attached to EKS nodes
@@ -61,3 +67,7 @@ Assuming you have some resources shared on another VPC (an RDS instance for exam
 2. Setting route tables on both directions to allow communication
 3. Adding an ingress role to SG_ID to accept all communication from your new cluster nodes.
 
+
+## Contributing
+
+Is more than welcome! ;)
