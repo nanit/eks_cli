@@ -4,7 +4,7 @@ EKS cluster bootstrap with batteries included
 
 ## Highlights
 
-* Supports creation of various node groups of different types with communication between them
+* Supports creation of multiple node groups of different types with communication enabled between them
 * Taint and label your nodegroups
 * Manage IAM policies that will be attached to your nodes
 * Easily configure docker repository secrets to allow pulling private images
