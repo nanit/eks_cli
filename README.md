@@ -23,6 +23,8 @@ $ eks create-nodegroup --cluster-name My-EKS-Cluster --group-name other-nodes --
 $ eks create-nodegroup --all --cluster-name My-EKS-Cluster --yes
 ```
 
+You can type `eks` in your shell to get the full synopsys of available commands
+
 ## Prerequisite
 
 1. Ruby
