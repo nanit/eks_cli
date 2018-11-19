@@ -58,7 +58,7 @@ Installs the nvidia device plugin required to have your GPUs exposed
 
 ### Adding Dockerhub Secrets
 
-`$ eks set-docker-registry-credentials <dockerhub-user> <dockerhub-email> <dockerhub-password> --cluster-name My-EKS-Cluster`
+`$ eks set-docker-registry-credentials <dockerhub-user> <dockerhub-password> <dockerhub-email> --cluster-name My-EKS-Cluster`
 
 Adds your dockerhub credentials as a secret and attaches it to the default serviceaccount imagePullSecrets
 
