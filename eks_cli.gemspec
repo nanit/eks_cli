@@ -1,10 +1,11 @@
 # coding: utf-8
 lib = File.expand_path("../lib", __FILE__)
 $LOAD_PATH.unshift(lib) unless $LOAD_PATH.include?(lib)
+require 'eks_cli/version'
 
 Gem::Specification.new do |s|
   s.name        = 'eks_cli'
-  s.version     = '0.1.0'
+  s.version     = EksCli::VERSION
   s.date        = '2018-11-18'
   s.summary     = "Make EKS great again!"
   s.description = "A utility to manage and create EKS (Kubernetes) cluster on Amazon Web Services"

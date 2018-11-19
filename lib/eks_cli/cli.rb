@@ -1,4 +1,5 @@
 require 'thor'
+require 'version'
 
 autoload :JSON, 'json'
 
@@ -34,10 +35,20 @@ module EksCli
 
     class_option :cluster_name, required: true, aliases: :c
 
-    desc "bootstrap REGION", "bootstrap cluster configuration"
-    def bootstrap(region)
+    desc "create REGION", "creates a new EKS cluster"
+    option :open_ports, type: :array, default: [], desc: "open ports on cluster nodes (eg 22 for SSH access)"
+    def create(region)
+      Config[cluster_name].bootstrap({region: region})
+      create_eks_role
+      create_cluster_vpc
+      create_eks_cluster
+      create_cluster_security_group
+    end
+
+    desc "create-eks-role", "creates an IAM role for usage by EKS"
+    def create_eks_role
       role = IAM::Client.new(cluster_name).create_eks_role
-      Config[cluster_name].bootstrap({region: region, eks_role_arn: role.arn})
+      Config[cluster_name].write({eks_role_arn: role.arn})
     end
 
     desc "show-config", "print cluster configuration"
@@ -144,6 +155,12 @@ module EksCli
     desc "set-inter-vpc-networking TO_VPC_ID TO_SG_ID", "creates a vpc peering connection, sets route tables and allows network access on SG"
     def set_inter_vpc_networking(to_vpc_id, to_sg_id)
       VPC::Client.new(cluster_name).set_inter_vpc_networking(to_vpc_id, to_sg_id)
+    end
+
+    disable_required_check! :version
+    desc "version", "prints eks_cli version"
+    def version
+      puts EksCli::VERSION
     end
 
     no_commands do
