@@ -39,7 +39,7 @@ module EksCli
       to_path = resolve_config_file(to)
       Log.info "updating configuration file #{to_path}:\n#{attrs}"
       attrs = attrs.inject({}) {|h,(k,v)| h[k.to_s] = v; h}
-      current = read(to_path)
+      current = read(to_path) rescue {}
       updated = current.deep_merge(attrs)
       write_to_file(updated, to_path)
     end
@@ -56,8 +56,9 @@ module EksCli
     end
 
     def update_nodegroup(options)
-      options = options.slice(:ami, :group_name, :instance_type, :num_subnets, :ssh_key_name, :taints, :min, :max)
-      write({groups: { options[:group_name] => options }}, :groups)
+      options = options.slice("ami", "group_name", "instance_type", "num_subnets", "ssh_key_name", "taints", "min", "max")
+      raise "bad nodegroup name #{options["group_name"]}" if options["group_name"] == nil || options["group_name"].empty?
+      write({groups: { options["group_name"] => options }}, :groups)
     end
 
     private
