@@ -70,9 +70,9 @@ Creates a standard gp2 default storage class named gp2
 
 `$ eks set-inter-vpc-networking VPC_ID SG_ID`
 
-Assuming you have some resources shared on another VPC (an RDS instance for example) this command allows you to interact with from the new EKS cluster it by:
+Assuming you have some shared resources on another VPC (an RDS instance for example), this command open communication between your new EKS cluster and your old VPC:
 
-1. Creating and accepting a VPC peering connection from you EKS cluster VPC to the old VPC
+1. Creating and accepting a VPC peering connection from your EKS cluster VPC to the old VPC
 2. Setting route tables on both directions to allow communication
 3. Adding an ingress role to SG_ID to accept all communication from your new cluster nodes.
 
