@@ -10,8 +10,8 @@ module EksCli
         @cluster_name = cluster_name
       end
 
-      def update_dns(hostname, k8s_service_name, route53_hosted_zone_id, elb_hosted_zone_id)
-        change_dns_target(hostname, k8s.get_elb(k8s_service_name), route53_hosted_zone_id, elb_hosted_zone_id)
+      def update_dns(hostname, k8s_service_name, k8s_ns, route53_hosted_zone_id, elb_hosted_zone_id)
+        change_dns_target(hostname, k8s.get_elb(k8s_service_name, k8s_ns), route53_hosted_zone_id, elb_hosted_zone_id)
       end
 
       private
