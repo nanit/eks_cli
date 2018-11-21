@@ -34,6 +34,11 @@ module EksCli
         Log.info self.create_storage_class(resource_from_yaml("default_storage_class.yaml"))
       end
 
+      def create_dns_autoscaler
+        Log.info "creating kube-dns autoscaler"
+        Log.info self.create_deployment(resource_from_yaml("dns_autoscaler.dep.yaml"))
+      end
+
       private
 
       def resource_from_yaml(filename)

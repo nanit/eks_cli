@@ -14,7 +14,7 @@ EKS cluster bootstrap with batteries included
 ## Usage
 
 ```
-$ gem install eks_cli -v 0.1.3
+$ gem install eks_cli -v 0.1.4
 $ eks create us-west-2 --cluster-name=My-EKS-Cluster
 $ eks create-nodegroup --cluster-name My-EKS-Cluster --group-name nodes --ssh-key-name my-ssh-key --min 1 --max 3
 $ eks create-nodegroup --cluster-name My-EKS-Cluster --group-name other-nodes --ssh-key-name my-ssh-key --min 3 --max 3 --instance-type m5.2xlarge
@@ -65,6 +65,12 @@ Adds your dockerhub credentials as a secret and attaches it to the default servi
 `$ eks create-default-storage-class --cluster-name My-EKS-Cluster`
 
 Creates a standard gp2 default storage class named gp2
+
+### Installing DNS autosclaer
+
+`$ eks create-dns-autoscaler --cluster-name My-EKS-Cluster`
+
+Creates kube-dns autoscaler with sane defaults
 
 ### Connecting to an existing VPC
 

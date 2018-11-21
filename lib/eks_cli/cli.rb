@@ -37,12 +37,18 @@ module EksCli
 
     desc "create REGION", "creates a new EKS cluster"
     option :open_ports, type: :array, default: [], desc: "open ports on cluster nodes (eg 22 for SSH access)"
+    option :enable_gpu, type: :boolean, default: false, desc: "installs nvidia device plugin daemon set"
+    option :create_default_storage_class, type: :boolean, default: true, desc: "creates a default gp2 storage class"
+    option :create_dns_autoscaler, type: :boolean, default: true, desc: "creates dns autoscaler on the cluster"
     def create(region)
       Config[cluster_name].bootstrap({region: region})
       create_eks_role
       create_cluster_vpc
       create_eks_cluster
       create_cluster_security_group
+      enable_gpu if options[:enable_gpu]
+      create_default_storage_class if options[:create_default_storage_class]
+      create_dns_autoscaler if options[:create_dns_autoscaler]
     end
 
     desc "create-eks-role", "creates an IAM role for usage by EKS"
@@ -155,6 +161,11 @@ module EksCli
     desc "set-inter-vpc-networking TO_VPC_ID TO_SG_ID", "creates a vpc peering connection, sets route tables and allows network access on SG"
     def set_inter_vpc_networking(to_vpc_id, to_sg_id)
       VPC::Client.new(cluster_name).set_inter_vpc_networking(to_vpc_id, to_sg_id)
+    end
+
+    desc "create-dns-autoscaler", "creates kube dns autoscaler"
+    def create_dns_autoscaler
+      K8s::Client.new(cluster_name).create_dns_autoscaler
     end
 
     disable_required_check! :version
