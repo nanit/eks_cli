@@ -19,7 +19,6 @@ EKS cluster bootstrap with batteries included
 $ gem install eks_cli -v 0.1.6
 $ eks create us-west-2 --cluster-name My-EKS-Cluster
 $ eks create-nodegroup --cluster-name My-EKS-Cluster --group-name nodes --ssh-key-name my-ssh-key
-$ eks create-nodegroup --cluster-name My-EKS-Cluster --group-name other-nodes --ssh-key-name my-ssh-key --instance-type m5.2xlarge
 $ eks create-nodegroup --all --cluster-name My-EKS-Cluster --yes
 ```
 
