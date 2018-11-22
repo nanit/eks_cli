@@ -1,5 +1,6 @@
 require 'active_support/core_ext/hash'
 require 'config'
+require 'spotinst/client'
 require 'cloudformation/stack'
 require 'iam/client'
 require 'k8s/auth'
@@ -26,6 +27,7 @@ module EksCli
 
     def initialize(cluster_name, name)
       @cluster_name = cluster_name
+      @name = name
       @group = Config[cluster_name].for_group(name)
     end
 
@@ -51,6 +53,19 @@ module EksCli
     def delete
       detach_iam_policies
       cf_stack.delete
+    end
+
+    def asg
+      cf_stack.resource("NodeGroup")
+    end
+
+    def instance_type
+      @group["instance_type"]
+    end
+
+    def export_to_spotinst
+      Log.info "exporting nodegroup #{@name} to spotinst"
+      Log.info Spotinst::Client.new.import_asg(Config[@cluster_name]["region"], asg, [instance_type])
     end
 
     private

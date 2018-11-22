@@ -175,6 +175,22 @@ module EksCli
       K8s::Client.new(cluster_name).wait_for_cluster
     end
 
+    desc "export-nodegroup", "exports nodegroup auto scaling group to spotinst"
+    option :all, type: :boolean, default: false, desc: "create all nodegroups. must be used in conjunction with --yes"
+    option :group_name, type: :string, desc: "create a specific nodegroup. can't be used with --all"
+    def export_nodegroup
+      nodegroups.each {|ng| ng.export_to_spotinst }
+    end
+
+    desc "add-iam-user IAM_ARN", "adds an IAM user as an authorized member on the EKS cluster"
+    option :username, default: "admin", desc: "the username on the k8s cluster"
+    option :groups, type: :array, default: ["system:masters"], desc: "which group should the user be added to"
+    option :yes, type: :boolean, default: false, desc: "update aws-auth configmap"
+    def add_iam_user(iam_arn)
+      Config[cluster_name].add_user(iam_arn, options[:username], options[:groups])
+      K8s::Auth.new(cluster_name).update if options[:yes]
+    end
+
     disable_required_check! :version
     desc "version", "prints eks_cli version"
     def version

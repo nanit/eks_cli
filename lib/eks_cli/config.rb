@@ -36,12 +36,12 @@ module EksCli
     end
 
     def write(attrs, to = :state)
-      to_path = resolve_config_file(to)
-      Log.info "updating configuration file #{to_path}:\n#{attrs}"
+      path = resolve_config_file(to)
+      current = read(path) rescue {}
+      Log.info "updating configuration file #{path}:\n#{attrs}"
       attrs = attrs.inject({}) {|h,(k,v)| h[k.to_s] = v; h}
-      current = read(to_path) rescue {}
       updated = current.deep_merge(attrs)
-      write_to_file(updated, to_path)
+      write_to_file(updated, path)
     end
 
     def bootstrap(attrs)
@@ -59,6 +59,10 @@ module EksCli
       options = options.slice("ami", "group_name", "instance_type", "num_subnets", "ssh_key_name", "taints", "min", "max")
       raise "bad nodegroup name #{options["group_name"]}" if options["group_name"] == nil || options["group_name"].empty?
       write({groups: { options["group_name"] => options }}, :groups)
+    end
+    
+    def add_user(arn, username, groups)
+      write({"users" => {arn => {"username" => username, "groups" => groups}}})
     end
 
     private

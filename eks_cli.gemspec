@@ -28,5 +28,6 @@ Gem::Specification.new do |s|
   s.add_dependency 'aws-sdk-route53'
   s.add_dependency 'activesupport'
   s.add_dependency 'kubeclient'
+  s.add_dependency 'httparty'
 end
 

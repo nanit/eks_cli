@@ -73,6 +73,10 @@ module EksCli
         stack.outputs
       end
 
+      def resource(key)
+        Aws::CloudFormation::Stack.new(stack.stack_name, client: client).resource(key).physical_resource_id
+      end
+
       private
 
       def self.pending(stacks)

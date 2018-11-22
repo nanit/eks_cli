@@ -1,5 +1,6 @@
 require 'k8s/configmap_builder'
 require 'k8s/client'
+require 'config'
 require 'cloudformation/client'
 require 'cloudformation/stack'
 require 'log'
@@ -34,7 +35,7 @@ module EksCli
         CloudFormation::Client.get(@cluster_name)
       end
 
-      def arns
+      def node_arns
         client
           .list_stacks(stack_status_filter: ["CREATE_COMPLETE"])
           .stack_summaries
@@ -44,8 +45,12 @@ module EksCli
           .map {|stack| stack.node_instance_role_arn}
       end
 
+      def users
+        Config[@cluster_name]["users"]
+      end
+
       def configmap
-        ConfigmapBuilder.build(arns)
+        ConfigmapBuilder.build(node_arns, users)
       end
 
     end
