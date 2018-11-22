@@ -46,9 +46,11 @@ module EksCli
       create_cluster_vpc
       create_eks_cluster
       create_cluster_security_group
+      wait_for_cluster
       enable_gpu if options[:enable_gpu]
       create_default_storage_class if options[:create_default_storage_class]
       create_dns_autoscaler if options[:create_dns_autoscaler]
+      say "cluster creation completed"
     end
 
     desc "create-eks-role", "creates an IAM role for usage by EKS"
@@ -166,6 +168,11 @@ module EksCli
     desc "create-dns-autoscaler", "creates kube dns autoscaler"
     def create_dns_autoscaler
       K8s::Client.new(cluster_name).create_dns_autoscaler
+    end
+
+    desc "wait-for-cluster", "waits until cluster responds to HTTP requests"
+    def wait_for_cluster
+      K8s::Client.new(cluster_name).wait_for_cluster
     end
 
     disable_required_check! :version

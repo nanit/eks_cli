@@ -6,6 +6,7 @@ require_relative '../config'
 module EksCli
   module K8s
     class Client
+      TIMEOUTS = {open: 10, read: 20}
 
       def initialize(cluster_name)
         @cluster_name = cluster_name
@@ -16,6 +17,7 @@ module EksCli
       end
 
       def enable_gpu
+        Log.info "installing nvidia device plugin daemon set (GPU support)"
         self.create_daemon_set(resource_from_yaml("nvidia_device_plugin.yaml"))
       end
 
@@ -37,6 +39,22 @@ module EksCli
       def create_dns_autoscaler
         Log.info "creating kube-dns autoscaler"
         Log.info self.create_deployment(resource_from_yaml("dns_autoscaler.dep.yaml"))
+      end
+
+      def wait_for_cluster
+        Log.info "waiting for cluster #{@cluster_name} to respond"
+        ready = false
+        while !ready
+          begin
+            res = self.get_services
+            if res.count > 0
+              Log.info "#{@cluster_name} is up and running!"
+              ready = true
+            end
+          rescue Kubeclient::HttpError
+            Log.info "couldn't connect to server, retrying..."
+          end
+        end
       end
 
       private
@@ -75,7 +93,8 @@ module EksCli
           [context.api_endpoint, suffix].join,
           context.api_version,
           ssl_options: context.ssl_options,
-          auth_options: {bearer_token: token})
+          auth_options: {bearer_token: token},
+          timeouts: TIMEOUTS)
       end
 
       def config
@@ -93,7 +112,6 @@ module EksCli
       def context
         kube_config.context(config["cluster_arn"])
       end
-
 
     end
   end
