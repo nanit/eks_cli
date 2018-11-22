@@ -34,6 +34,7 @@ You can type `eks` in your shell to get the full synopsis of available commands
 ### Creating more than a single nodegroup
 
 Nodegroups are created separately from the cluster. 
+
 You can use `eks create-nodegroup` multiple times to create several nodegroups with different instance types and number of workers.
 Nodes in different nodegroups may communicate freely thanks to a shared Security Group.
 
