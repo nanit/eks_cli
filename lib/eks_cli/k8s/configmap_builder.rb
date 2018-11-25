@@ -12,7 +12,7 @@ module EksCli
           cm.metadata.namespace = "kube-system"
           cm.data = {}
           cm.data.mapRoles = map_roles(node_arns)
-          cm.data.mapUsers = map_users(users)
+          cm.data.mapUsers = map_users(users) if users && !users.empty?
           cm
         end
 

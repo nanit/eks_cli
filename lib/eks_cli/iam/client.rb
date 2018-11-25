@@ -69,7 +69,7 @@ module EksCli
       end
 
       def node_policies
-        config["iam_policies"]
+        config["iam_policies"] || []
       end
 
       def arn(p)
