@@ -26,8 +26,9 @@ You can type `eks` in your shell to get the full synopsis of available commands
 ## Prerequisite
 
 1. Ruby
-2. `kubectl` with version > 10 on your `PATH`
-3. `aws-iam-authenticator` on your `PATH`
+2. [kubectl](https://kubernetes.io/docs/tasks/tools/install-kubectl/) version > 10 on your `PATH`
+3. [aws-iam-authenticator](https://github.com/kubernetes-sigs/aws-iam-authenticator) on your `PATH`
+4. [aws-cli](https://docs.aws.amazon.com/cli/latest/userguide/installing.html) version > 1.16.18 on your `PATH`
 
 ## Extra Stuff
 
