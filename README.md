@@ -23,7 +23,7 @@ $ eks create-nodegroup --cluster-name My-EKS-Cluster --group-name nodes --ssh-ke
 
 You can type `eks` in your shell to get the full synopsis of available commands
 
-## Prerequisite
+## Prerequisites
 
 1. Ruby
 2. [kubectl](https://kubernetes.io/docs/tasks/tools/install-kubectl/) version > 10 on your `PATH`
