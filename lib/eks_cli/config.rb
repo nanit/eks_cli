@@ -111,7 +111,6 @@ module EksCli
 
     def group_defaults
       {"group_name" => "Workers",
-       "ami" => "ami-0a54c984b9f908c81",
        "instance_type" => "m5.xlarge",
        "max" => 1,
        "min" =>  1,

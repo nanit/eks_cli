@@ -23,6 +23,16 @@ module EksCli
          group_name: "NodeGroupName",
          bootstrap_args: "BootstrapArguments"}
 
+    AMIS = {"us-west-2" => "ami-0a54c984b9f908c81",
+            "us-east-1" => "ami-0440e4f6b9713faf6",
+            "us-east-2" => "ami-0958a76db2d150238",
+            "us-west-1" => "ami-00c3b2d35bddd4f5c"}
+
+    GPU_AMIS = {"us-west-2" => "ami-08156e8fd65879a13",
+                "us-east-1" => "ami-0c974dde3f6d691a1",
+                "us-east-2" => "ami-089849e811ace242f",
+                "us-west-1" => "ami-0c3479bcd739094f0"}
+
     CAPABILITIES = ["CAPABILITY_IAM"]
 
     def initialize(cluster_name, name)
@@ -65,17 +75,20 @@ module EksCli
 
     def export_to_spotinst
       Log.info "exporting nodegroup #{@name} to spotinst"
-      Log.info Spotinst::Client.new.import_asg(Config[@cluster_name]["region"], asg, [instance_type])
+      Log.info Spotinst::Client.new.import_asg(config["region"], asg, [instance_type])
+    end
+
+    def cf_stack
+      CloudFormation::Stack.find(@cluster_name, stack_name)
+    rescue Aws::CloudFormation::Errors::ValidationError => e
+      Log.error("could not find stack for nodegroup #{@name} - please make sure to run eks create-nodegroup --all --yes -c <cluster_name> to sync config")
+      raise e
     end
 
     private
 
     def cf_template_body
       @cf_template_body ||= File.read(File.join($root_dir, '/assets/nodegroup_cf_template.yaml'))
-    end
-
-    def cf_stack
-      CloudFormation::Stack.find(@cluster_name, stack_name)
     end
 
     def await(stack)
@@ -105,6 +118,7 @@ module EksCli
 
     def build_params
       @group["bootstrap_args"] = bootstrap_args
+      @group["ami"] ||= default_ami
       @group.except("taints").inject([]) do |params, (k, v)|
         params << build_param(k, v)
       end
@@ -126,6 +140,22 @@ module EksCli
     def build_param(k, v)
       {parameter_key: T[k.to_sym],
        parameter_value: v.to_s}
+    end
+
+    def default_ami
+      if gpu?
+        GPU_AMIS[config["region"]]
+      else
+        AMIS[config["region"]]
+      end
+    end
+
+    def gpu?
+      @group["instance_type"].start_with?("p2.") || @group["instance_type"].start_with?("p3.")
+    end
+
+    def config
+      Config[@cluster_name]
     end
 
   end

@@ -45,7 +45,11 @@ module EksCli
       end
 
       def eks_worker?
-        !worker_tag.empty?
+        worker_tag
+      end
+
+      def eks_cluster
+        get_tag("eks-cluster")
       end
 
       def node_instance_role_arn
@@ -103,12 +107,13 @@ module EksCli
         client.describe_stacks(stack_name: @id).stacks.first
       end
 
-      def worker_tag
-        stack.tags.select {|t| worker_tag?(t)}
+      def get_tag(k)
+        tag = stack.tags.select {|t| t.key == k}.first
+        tag.value if tag
       end
 
-      def worker_tag?(tag)
-        tag.key == "eks-nodegroup"
+      def worker_tag
+        get_tag("eks-nodegroup")
       end
 
     end

@@ -11,14 +11,15 @@ EKS cluster bootstrap with batteries included
 * Easily configure docker repository secrets to allow pulling private images
 * Manage Route53 DNS records to point at your Kubernetes services
 * Export nodegroups to SporInst Elastigroups
+* Auto resolving AMIs by region & instance types (GPU enabled AMIs)
 * Even more...
 
 ## Usage
 
 ```
-$ gem install eks_cli -v 0.1.7
+$ gem install eks_cli -v 0.1.8
 $ eks create us-west-2 --cluster-name My-EKS-Cluster
-$ eks create-nodegroup --cluster-name My-EKS-Cluster --group-name nodes --ssh-key-name my-ssh-key --yes
+$ eks create-nodegroup --cluster-name My-EKS-Cluster --group-name nodes --ssh-key-name <my-ssh-key> --yes
 ```
 
 You can type `eks` in your shell to get the full synopsis of available commands

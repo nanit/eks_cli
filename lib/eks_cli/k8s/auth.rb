@@ -4,6 +4,7 @@ require 'config'
 require 'cloudformation/client'
 require 'cloudformation/stack'
 require 'log'
+require 'nodegroup'
 
 module EksCli
   module K8s
@@ -36,17 +37,20 @@ module EksCli
       end
 
       def node_arns
-        client
-          .list_stacks(stack_status_filter: ["CREATE_COMPLETE"])
-          .stack_summaries
-          .map(&:stack_id)
-          .map {|id| CloudFormation::Stack.new(@cluster_name, id)}
+        config["groups"]
+          .keys
+          .map {|name| NodeGroup.new(@cluster_name, name).cf_stack}
           .select {|stack| stack.eks_worker?}
+          .select {|stack| stack.eks_cluster == @cluster_name}
           .map {|stack| stack.node_instance_role_arn}
       end
 
       def users
-        Config[@cluster_name]["users"]
+        config["users"]
+      end
+
+      def config
+        Config[@cluster_name]
       end
 
       def configmap
