@@ -95,7 +95,7 @@ Assuming you have some shared resources on another VPC (an RDS instance for exam
 
 1. Creating and accepting a VPC peering connection from your EKS cluster VPC to the old VPC
 2. Setting route tables on both directions to allow communication
-3. Adding an ingress role to SG_ID to accept all communication from your new cluster nodes.
+3. Adding an ingress rule to SG_ID to accept all communication from your new cluster nodes.
 
 ### Exporting nodegroups to Spotinst
 
