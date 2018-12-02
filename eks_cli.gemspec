@@ -20,14 +20,14 @@ Gem::Specification.new do |s|
   s.bindir        = "bin"
   s.executables   = ["eks"]
   s.require_paths = ["lib"]
-  s.add_dependency 'thor'
-  s.add_dependency 'aws-sdk-iam'
-  s.add_dependency 'aws-sdk-eks'
-  s.add_dependency 'aws-sdk-ec2'
-  s.add_dependency 'aws-sdk-cloudformation'
-  s.add_dependency 'aws-sdk-route53'
-  s.add_dependency 'activesupport'
-  s.add_dependency 'kubeclient'
-  s.add_dependency 'httparty'
+  s.add_dependency 'thor', '0.20.3'
+  s.add_dependency 'aws-sdk-iam', '1.12.0'
+  s.add_dependency 'aws-sdk-eks', '1.8.0'
+  s.add_dependency 'aws-sdk-ec2', '1.62.0'
+  s.add_dependency 'aws-sdk-cloudformation', '1.13.0'
+  s.add_dependency 'aws-sdk-route53', '1.16.0'
+  s.add_dependency 'activesupport', '5.2.1.1'
+  s.add_dependency 'kubeclient', '4.1.0'
+  s.add_dependency 'httparty', '0.16.3'
 end
 
