@@ -129,6 +129,7 @@ module EksCli
     option :max, required: true, type: :numeric, desc: "Maximum number of nodes on the nodegroup"
     def scale_nodegroup
       NodeGroup.new(cluster_name, options[:group_name]).scale(options[:min].to_i, options[:max].to_i)
+      Config[cluster_name].update_nodegroup(options)
     end
 
     desc "delete-nodegroup", "deletes cloudformation stack for nodegroup"
