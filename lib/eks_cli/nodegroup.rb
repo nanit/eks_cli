@@ -113,7 +113,7 @@ module EksCli
     end
 
     def stack_name
-      "#{@group["cluster_name"]}-Workers-#{@group["group_name"]}"
+      "#{@group["cluster_name"]}-NodeGroup-#{@group["group_name"]}"
     end
 
     def build_params

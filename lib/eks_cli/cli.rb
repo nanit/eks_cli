@@ -35,13 +35,15 @@ module EksCli
 
     class_option :cluster_name, required: true, aliases: :c
 
-    desc "create REGION", "creates a new EKS cluster"
+    desc "create", "creates a new EKS cluster"
+    option :cidr, type: :string, default: "192.168.0.0/16", desc: "CIRD block for cluster VPC"
+    option :region, type: :string, default: "us-west-2", desc: "AWS region for EKS cluster"
     option :open_ports, type: :array, default: [], desc: "open ports on cluster nodes (eg 22 for SSH access)"
     option :enable_gpu, type: :boolean, default: false, desc: "installs nvidia device plugin daemon set"
     option :create_default_storage_class, type: :boolean, default: true, desc: "creates a default gp2 storage class"
     option :create_dns_autoscaler, type: :boolean, default: true, desc: "creates dns autoscaler on the cluster"
-    def create(region)
-      Config[cluster_name].bootstrap({region: region})
+    def create
+      Config[cluster_name].bootstrap({region: options[:region]})
       create_eks_role
       create_cluster_vpc
       create_eks_cluster
@@ -70,8 +72,10 @@ module EksCli
     end
 
     desc "create-cluster-vpc", "creates a vpc according to aws cloudformation template"
+    option :cidr, type: :string, default: "192.168.0.0/16", desc: "CIRD block for cluster VPC"
     def create_cluster_vpc
-      cfg = CloudFormation::VPC.create(cluster_name)
+      Config[cluster_name].write({cidr: options[:cidr]}, :config)
+      cfg = CloudFormation::VPC.new(cluster_name).create
       Config[cluster_name].write(cfg)
     end
 
