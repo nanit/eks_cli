@@ -123,6 +123,14 @@ module EksCli
       end
     end
 
+    desc "scale-nodegroup", "scales a nodegroup"
+    option :group_name, type: :string, required: true, desc: "nodegroup name to scale"
+    option :min, required: true, type: :numeric, desc: "Minimum number of nodes on the nodegroup"
+    option :max, required: true, type: :numeric, desc: "Maximum number of nodes on the nodegroup"
+    def scale_nodegroup
+      NodeGroup.new(cluster_name, options[:group_name]).scale(options[:min].to_i, options[:max].to_i)
+    end
+
     desc "delete-nodegroup", "deletes cloudformation stack for nodegroup"
     option :all, type: :boolean, default: false, desc: "delete all nodegroups. can't be used with --name"
     option :name, type: :string, desc: "delete a specific nodegroup. can't be used with --all"

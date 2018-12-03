@@ -1,4 +1,5 @@
 require 'active_support/core_ext/hash'
+require 'aws-sdk-autoscaling'
 require 'config'
 require 'spotinst/client'
 require 'cloudformation/stack'
@@ -66,7 +67,7 @@ module EksCli
     end
 
     def asg
-      cf_stack.resource("NodeGroup")
+      @asg ||= cf_stack.resource("NodeGroup")
     end
 
     def instance_type
@@ -83,6 +84,15 @@ module EksCli
     rescue Aws::CloudFormation::Errors::ValidationError => e
       Log.error("could not find stack for nodegroup #{@name} - please make sure to run eks create-nodegroup --all --yes -c <cluster_name> to sync config")
       raise e
+    end
+
+    def scale(min, max)
+      Log.info "scaling #{asg}: min -> #{min}, max -> #{max}"
+      Log.info asg_client.update_auto_scaling_group({
+        auto_scaling_group_name: asg, 
+        max_size: max, 
+        min_size: min
+      })
     end
 
     private
@@ -156,6 +166,10 @@ module EksCli
 
     def config
       Config[@cluster_name]
+    end
+
+    def asg_client
+      @asg_client ||= Aws::AutoScaling::Client.new(region: config["region"])
     end
 
   end
