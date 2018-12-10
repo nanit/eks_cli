@@ -24,8 +24,8 @@ module EksCli
          group_name: "NodeGroupName",
          bootstrap_args: "BootstrapArguments"}
 
-    AMIS = {"us-west-2" => "ami-0a54c984b9f908c81",
-            "us-east-1" => "ami-0440e4f6b9713faf6",
+    AMIS = {"us-west-2" => "ami-0f54a2f7d2e9c88b3",
+            "us-east-1" => "ami-0a0b913ef3249b655",
             "us-east-2" => "ami-0958a76db2d150238",
             "us-west-1" => "ami-00c3b2d35bddd4f5c"}
 
