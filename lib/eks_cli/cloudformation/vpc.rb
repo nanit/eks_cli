@@ -7,8 +7,6 @@ module EksCli
   module CloudFormation
     class VPC
 
-      CF_TEMPLATE_URL = "https://amazon-eks.s3-us-west-2.amazonaws.com/cloudformation/2018-08-30/amazon-eks-vpc-sample.yaml" 
-
       def initialize(cluster_name)
         @cluster_name = cluster_name
       end
@@ -32,9 +30,13 @@ module EksCli
 
       def cf_config
         {stack_name: stack_name,
-         template_url: CF_TEMPLATE_URL,
+         template_body: cf_template_body,
          parameters: build_params,
          tags: tags}
+      end
+
+      def cf_template_body
+        @cf_template_body ||= File.read(File.join($root_dir, '/assets/eks_vpc_cf_template.yaml'))
       end
 
       def stack_name
@@ -51,7 +53,10 @@ module EksCli
         {"VpcBlock" => cidr,
          "Subnet01Block" => subnets[0],
          "Subnet02Block" => subnets[1],
-         "Subnet03Block" => subnets[2]}.map do |(k,v)|
+         "Subnet03Block" => subnets[2],
+         "Subnet01AZ" => config["subnet1_az"],
+         "Subnet02AZ" => config["subnet2_az"],
+         "Subnet03AZ" => config["subnet3_az"]}.map do |(k,v)|
           {parameter_key: k, parameter_value: v}
         end
 

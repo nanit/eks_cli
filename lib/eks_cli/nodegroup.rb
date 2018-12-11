@@ -22,6 +22,7 @@ module EksCli
          vpc_id: "VpcId",
          subnets: "Subnets",
          group_name: "NodeGroupName",
+         iam_policies: "NodeGroupIAMPolicies",
          bootstrap_args: "BootstrapArguments"}
 
     AMIS = {"us-west-2" => "ami-0f54a2f7d2e9c88b3",
@@ -33,6 +34,10 @@ module EksCli
                 "us-east-1" => "ami-0c974dde3f6d691a1",
                 "us-east-2" => "ami-089849e811ace242f",
                 "us-west-1" => "ami-0c3479bcd739094f0"}
+
+    EKS_IAM_POLICIES = %w{AmazonEKSWorkerNodePolicy
+                          AmazonEKS_CNI_Policy
+                          AmazonEC2ContainerRegistryReadOnly}
 
     CAPABILITIES = ["CAPABILITY_IAM"]
 
@@ -57,12 +62,7 @@ module EksCli
        {key: "eks-cluster", value: @cluster_name}]
     end
 
-    def detach_iam_policies
-      IAM::Client.new(@cluster_name).detach_node_policies(cf_stack.node_instance_role_name)
-    end
-
     def delete
-      detach_iam_policies
       cf_stack.delete
     end
 
@@ -74,9 +74,10 @@ module EksCli
       @group["instance_type"]
     end
 
-    def export_to_spotinst
+    def export_to_spotinst(exact_instance_type)
       Log.info "exporting nodegroup #{@name} to spotinst"
-      Log.info Spotinst::Client.new.import_asg(config["region"], asg, [instance_type])
+      instance_types = exact_instance_type ? [instance_type] : nil
+      Log.info Spotinst::Client.new.import_asg(config["region"], asg, instance_types)
     end
 
     def cf_stack
@@ -111,7 +112,6 @@ module EksCli
       Log.info "stack completed with status #{stack.status}"
 
       K8s::Auth.new(@cluster_name).update
-      IAM::Client.new(@cluster_name).attach_node_policies(stack.node_instance_role_name)
     end
 
     def cloudformation_config
@@ -129,9 +129,14 @@ module EksCli
     def build_params
       @group["bootstrap_args"] = bootstrap_args
       @group["ami"] ||= default_ami
+      @group["iam_policies"] = iam_policies
       @group.except("taints").inject([]) do |params, (k, v)|
         params << build_param(k, v)
       end
+    end
+
+    def iam_policies
+      (EKS_IAM_POLICIES + (config["iam_policies"] || [])).map {|p| "arn:aws:iam::aws:policy/#{p}"}.join(",")
     end
 
     def bootstrap_args

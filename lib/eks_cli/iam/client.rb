@@ -44,32 +44,12 @@ module EksCli
         role
       end
 
-      def attach_node_policies(role_name)
-        attach_policies(role_name, node_policies)
-      end
-
-      def detach_node_policies(role_name)
-        detach_policies(role_name, node_policies)
-      end
-
       def attach_policies(role_name, policies)
         Log.info "attaching IAM policies to #{role_name}"
         policies.each do |p|
           client.attach_role_policy(policy_arn: arn(p),
                                     role_name: role_name)
         end
-      end
-
-      def detach_policies(role_name, policies)
-        Log.info "detaching IAM policies to #{role_name}"
-        policies.each do |p|
-          client.detach_role_policy(policy_arn: arn(p),
-                                    role_name: role_name)
-        end
-      end
-
-      def node_policies
-        config["iam_policies"] || []
       end
 
       def arn(p)

@@ -4,7 +4,14 @@ require 'active_support/core_ext/hash'
 require 'fileutils'
 module EksCli
   class Config
+
+    AZS = {"us-east-1" => ["us-east-1a", "us-east-1b", "us-east-1c"],
+           "us-west-2" => ["us-west-2a", "us-west-2b", "us-west-2c"],
+           "us-east-2" => ["us-east-2a", "us-east-2b", "us-east-2c"],
+           "us-west-1" => ["us-west-1b", "us-west-1b", "us-west-1c"]}
+
     class << self
+
       def [](cluster_name)
         new(cluster_name)
       end
@@ -28,10 +35,9 @@ module EksCli
 
     def for_group(group_name)
       all = read_from_disk
-      group = group_defaults
-        .merge(all["groups"][group_name])
+      group = all["groups"][group_name]
         .merge(all.slice("cluster_name", "control_plane_sg_id", "nodes_sg_id", "vpc_id"))
-      group["subnets"] = all["subnets"][0..(group["num_subnets"]-1)].join(",")
+      group["subnets"] = group["subnets"].map {|s| all["subnets"][s-1]}.join(",")
       group
     end
 
@@ -56,7 +62,7 @@ module EksCli
     end
 
     def update_nodegroup(options)
-      options = options.slice("ami", "group_name", "instance_type", "num_subnets", "ssh_key_name", "taints", "min", "max")
+      options = options.slice("ami", "group_name", "instance_type", "subnets", "ssh_key_name", "volume_size", "taints", "min", "max")
       raise "bad nodegroup name #{options["group_name"]}" if options["group_name"] == nil || options["group_name"].empty?
       write({groups: { options["group_name"] => options }}, :groups)
     end
@@ -109,13 +115,5 @@ module EksCli
       yield dir
     end
 
-    def group_defaults
-      {"group_name" => "Workers",
-       "instance_type" => "m5.xlarge",
-       "max" => 1,
-       "min" =>  1,
-       "num_subnets" =>  3,
-       "volume_size" => 100}
-    end
   end
 end

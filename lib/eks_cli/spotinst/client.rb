@@ -21,8 +21,9 @@ module EksCli
       end
 
       def import_asg(region, asg_name, instance_types)
+        body = instance_types ? {group: {spotInstanceTypes: instance_types}} : {}
         self.class.post("/aws/ec2/group/autoScalingGroup/import?region=#{region}&accountId=#{@account_id}&autoScalingGroupName=#{asg_name}",
-                        body: {group: {spotInstanceTypes: instance_types} }.to_json)
+                        body: body.to_json)
       end
 
       def list_groups

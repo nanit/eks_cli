@@ -36,8 +36,11 @@ module EksCli
     class_option :cluster_name, required: true, aliases: :c
 
     desc "create", "creates a new EKS cluster"
-    option :cidr, type: :string, default: "192.168.0.0/16", desc: "CIRD block for cluster VPC"
     option :region, type: :string, default: "us-west-2", desc: "AWS region for EKS cluster"
+    option :cidr, type: :string, default: "192.168.0.0/16", desc: "CIRD block for cluster VPC"
+    option :subnet1_az, type: :string, desc: "availability zone for subnet 01"
+    option :subnet2_az, type: :string, desc: "availability zone for subnet 02"
+    option :subnet3_az, type: :string, desc: "availability zone for subnet 03"
     option :open_ports, type: :array, default: [], desc: "open ports on cluster nodes (eg 22 for SSH access)"
     option :enable_gpu, type: :boolean, default: false, desc: "installs nvidia device plugin daemon set"
     option :create_default_storage_class, type: :boolean, default: true, desc: "creates a default gp2 storage class"
@@ -73,10 +76,17 @@ module EksCli
 
     desc "create-cluster-vpc", "creates a vpc according to aws cloudformation template"
     option :cidr, type: :string, default: "192.168.0.0/16", desc: "CIRD block for cluster VPC"
+    option :subnet1_az, type: :string, desc: "availability zone for subnet 01"
+    option :subnet2_az, type: :string, desc: "availability zone for subnet 02"
+    option :subnet3_az, type: :string, desc: "availability zone for subnet 03"
     def create_cluster_vpc
-      Config[cluster_name].write({cidr: options[:cidr]}, :config)
+      opts = options.slice("cidr", "subnet1_az", "subnet2_az", "subnet3_az")
+      opts["subnet1_az"] ||= Config::AZS[config["region"]][0]
+      opts["subnet2_az"] ||= Config::AZS[config["region"]][1]
+      opts["subnet3_az"] ||= Config::AZS[config["region"]][2]
+      config.write(opts, :config)
       cfg = CloudFormation::VPC.new(cluster_name).create
-      Config[cluster_name].write(cfg)
+      config.write(cfg)
     end
 
     desc "create-eks-cluster", "create EKS cluster on AWS"
@@ -104,21 +114,23 @@ module EksCli
 
     desc "create-nodegroup", "creates all nodegroups on environment"
     option :all, type: :boolean, default: false, desc: "create all nodegroups. must be used in conjunction with --yes"
-    option :group_name, type: :string, desc: "create a specific nodegroup. can't be used with --all"
+    option :group_name, type: :string, default: "Workers", desc: "create a specific nodegroup. can't be used with --all"
     option :ami, desc: "AMI for the nodegroup"
-    option :instance_type, desc: "EC2 instance type (m5.xlarge etc...)"
-    option :num_subnets, type: :numeric, desc: "Number of subnets (AZs) to spread the nodegroup across"
-    option :ssh_key_name, desc: "Name of the default SSH key for the nodes"
+    option :instance_type, default: "m5.xlarge", desc: "EC2 instance type (m5.xlarge etc...)"
+    option :subnets, type: :array, default: ["1", "2", "3"], desc: "subnets to run on. for example --subnets=1 3 will run the nodegroup on subnet1 and subnet 3"
+    option :ssh_key_name, desc: "name of the default SSH key for the nodes"
     option :taints, desc: "Kubernetes taints to put on the nodes for example \"dedicated=critical:NoSchedule\""
-    option :min, type: :numeric, desc: "Minimum number of nodes on the nodegroup"
-    option :max, type: :numeric, desc: "Maximum number of nodes on the nodegroup"
-    option :yes, type: :boolean, default: false, desc: "Perform nodegroup creation"
+    option :volume_size, type: :numeric, default: 100, desc: "disk size for node group in GB"
+    option :min, type: :numeric, default: 1, desc: "minimum number of nodes on the nodegroup"
+    option :max, type: :numeric, default: 1, desc: "maximum number of nodes on the nodegroup"
+    option :yes, type: :boolean, default: false, desc: "perform nodegroup creation"
     def create_nodegroup
-      Config[cluster_name].update_nodegroup(options) unless options[:all]
-      if options[:yes]
+      opts = options.dup
+      opts[:subnets] = opts[:subnets].map(&:to_i)
+      Config[cluster_name].update_nodegroup(opts) unless opts[:all]
+      if opts[:yes]
         cf_stacks = nodegroups.map {|ng| ng.create(wait_for_completion: false)}
         CloudFormation::Stack.await(cf_stacks)
-        cf_stacks.each {|s| IAM::Client.new(cluster_name).attach_node_policies(s.node_instance_role_name)}
         K8s::Auth.new(cluster_name).update
       end
     end
@@ -142,13 +154,6 @@ module EksCli
     desc "update-auth", "update aws auth configmap to allow all nodegroups to connect to control plane"
     def update_auth
       K8s::Auth.new(cluster_name).update
-    end
-
-    desc "detach-iam-policies", "detaches added policies to nodegroup IAM Role"
-    option :all, type: :boolean, default: false, desc: "detach from all nodegroups. can't be used with --name"
-    option :name, type: :string, desc: "detach from a specific nodegroup. can't be used with --all"
-    def detach_iam_policies
-      nodegroups.each(&:detach_iam_policies)
     end
 
     desc "set-iam-policies", "sets IAM policies to be attached to created nodegroups"
@@ -191,8 +196,9 @@ module EksCli
     desc "export-nodegroup", "exports nodegroup auto scaling group to spotinst"
     option :all, type: :boolean, default: false, desc: "create all nodegroups. must be used in conjunction with --yes"
     option :group_name, type: :string, desc: "create a specific nodegroup. can't be used with --all"
+    option :exact_instance_type, type: :boolean, default: false, desc: "enforce spotinst to use existing instance type only"
     def export_nodegroup
-      nodegroups.each {|ng| ng.export_to_spotinst }
+      nodegroups.each {|ng| ng.export_to_spotinst(options[:exact_instance_type]) }
     end
 
     desc "add-iam-user IAM_ARN", "adds an IAM user as an authorized member on the EKS cluster"
@@ -213,10 +219,12 @@ module EksCli
     no_commands do
       def cluster_name; options[:cluster_name]; end
 
+      def config; Config[cluster_name]; end
+
       def all_nodegroups; Config[cluster_name]["groups"].keys ;end
 
       def nodegroups
-        ng = options[:group_name] ? [options[:group_name]] : all_nodegroups
+        ng = options[:all] ? all_nodegroups : [options[:group_name]]
         ng.map {|n| NodeGroup.new(cluster_name, n)}
       end
     end
