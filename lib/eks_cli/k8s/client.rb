@@ -43,18 +43,18 @@ module EksCli
 
       def wait_for_cluster
         Log.info "waiting for cluster #{@cluster_name} to respond"
-        ready = false
-        while !ready
+        successful_calls = 0
+        while successful_calls < 3
           begin
             res = self.get_services
             if res.count > 0
-              Log.info "#{@cluster_name} is up and running!"
-              ready = true
+              successful_calls += 1
             end
           rescue Kubeclient::HttpError
             Log.info "couldn't connect to server, retrying..."
           end
         end
+        Log.info "#{@cluster_name} is up and running!"
       end
 
       private

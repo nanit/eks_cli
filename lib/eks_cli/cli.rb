@@ -37,6 +37,7 @@ module EksCli
 
     desc "create", "creates a new EKS cluster"
     option :region, type: :string, default: "us-west-2", desc: "AWS region for EKS cluster"
+    option :kubernetes_version, type: :string, default: "1.10", desc: "EKS control plane version"
     option :cidr, type: :string, default: "192.168.0.0/16", desc: "CIRD block for cluster VPC"
     option :subnet1_az, type: :string, desc: "availability zone for subnet 01"
     option :subnet2_az, type: :string, desc: "availability zone for subnet 02"
@@ -46,7 +47,7 @@ module EksCli
     option :create_default_storage_class, type: :boolean, default: true, desc: "creates a default gp2 storage class"
     option :create_dns_autoscaler, type: :boolean, default: true, desc: "creates dns autoscaler on the cluster"
     def create
-      Config[cluster_name].bootstrap({region: options[:region]})
+      Config[cluster_name].bootstrap({region: options[:region], kubernetes_version: options[:kubernetes_version]})
       create_eks_role
       create_cluster_vpc
       create_eks_cluster
@@ -123,6 +124,7 @@ module EksCli
     option :volume_size, type: :numeric, default: 100, desc: "disk size for node group in GB"
     option :min, type: :numeric, default: 1, desc: "minimum number of nodes on the nodegroup"
     option :max, type: :numeric, default: 1, desc: "maximum number of nodes on the nodegroup"
+    option :desired, type: :numeric, default: 1, desc: "desired number of nodes on the nodegroup"
     option :yes, type: :boolean, default: false, desc: "perform nodegroup creation"
     def create_nodegroup
       opts = options.dup
