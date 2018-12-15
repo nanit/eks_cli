@@ -21,6 +21,7 @@ module EksCli
 
       def config
         {name: @cluster_name,
+         version: Config[@cluster_name]["kubernetes_version"],
          role_arn: Config[@cluster_name]["eks_role_arn"],
          resources_vpc_config: {
            subnet_ids: Config[@cluster_name]["subnets"],

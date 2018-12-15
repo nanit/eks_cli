@@ -15,6 +15,7 @@ module EksCli
          nodes_sg_id: "ClusterSecurityGroup",
          min: "NodeAutoScalingGroupMinSize",
          max: "NodeAutoScalingGroupMaxSize",
+         desired: "NodeAutoScalingGroupDesiredCapacity",
          instance_type: "NodeInstanceType",
          ami: "NodeImageId",
          volume_size: "NodeVolumeSize",
@@ -25,15 +26,15 @@ module EksCli
          iam_policies: "NodeGroupIAMPolicies",
          bootstrap_args: "BootstrapArguments"}
 
-    AMIS = {"us-west-2" => "ami-0f54a2f7d2e9c88b3",
-            "us-east-1" => "ami-0a0b913ef3249b655",
-            "us-east-2" => "ami-0958a76db2d150238",
-            "us-west-1" => "ami-00c3b2d35bddd4f5c"}
+    AMIS = {"us-west-2" => "ami-07af9511082779ae7",
+            "us-east-1" => "ami-027792c3cc6de7b5b",
+            "us-east-2" => "ami-036130f4127a367f7",
+            "us-west-1" => "ami-03612357ac9da2c7d"}
 
-    GPU_AMIS = {"us-west-2" => "ami-08156e8fd65879a13",
-                "us-east-1" => "ami-0c974dde3f6d691a1",
-                "us-east-2" => "ami-089849e811ace242f",
-                "us-west-1" => "ami-0c3479bcd739094f0"}
+    GPU_AMIS = {"us-west-2" => "ami-08754f7ac73185331",
+                "us-east-1" => "ami-03c499c67bc65c089",
+                "us-east-2" => "ami-081210a2fd7f3c487",
+                "us-west-1" => "ami-047637529a86c7237"}
 
     EKS_IAM_POLICIES = %w{AmazonEKSWorkerNodePolicy
                           AmazonEKS_CNI_Policy
