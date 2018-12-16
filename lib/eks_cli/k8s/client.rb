@@ -18,7 +18,7 @@ module EksCli
 
       def enable_gpu
         Log.info "installing nvidia device plugin daemon set (GPU support)"
-        self.create_daemon_set(resource_from_yaml("nvidia_device_plugin.yaml"))
+        self.create_daemon_set(resource_from_yaml("k8s/nvidia_device_plugin.yaml"))
       end
 
       def set_docker_registry_credentials(user, password, email)
@@ -33,12 +33,12 @@ module EksCli
 
       def create_default_storage_class
         Log.info "creating default storage class"
-        Log.info self.create_storage_class(resource_from_yaml("default_storage_class.yaml"))
+        Log.info self.create_storage_class(resource_from_yaml("k8s/default_storage_class.yaml"))
       end
 
       def create_dns_autoscaler
         Log.info "creating kube-dns autoscaler"
-        Log.info self.create_deployment(resource_from_yaml("dns_autoscaler.dep.yaml"))
+        Log.info self.create_deployment(resource_from_yaml("k8s/dns_autoscaler.dep.yaml"))
       end
 
       def wait_for_cluster
