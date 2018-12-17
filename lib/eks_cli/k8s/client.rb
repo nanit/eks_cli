@@ -1,3 +1,4 @@
+require 'utils/erb_resolver'
 require 'yaml'
 require 'kubeclient'
 require_relative '../log'
@@ -18,7 +19,7 @@ module EksCli
 
       def enable_gpu
         Log.info "installing nvidia device plugin daemon set (GPU support)"
-        self.create_daemon_set(resource_from_yaml("nvidia_device_plugin.yaml"))
+        self.create_daemon_set(resource_from_yaml("k8s/nvidia_device_plugin.yaml"))
       end
 
       def set_docker_registry_credentials(user, password, email)
@@ -33,12 +34,17 @@ module EksCli
 
       def create_default_storage_class
         Log.info "creating default storage class"
-        Log.info self.create_storage_class(resource_from_yaml("default_storage_class.yaml"))
+        Log.info self.create_storage_class(resource_from_yaml("k8s/default_storage_class.yaml"))
       end
 
       def create_dns_autoscaler
         Log.info "creating kube-dns autoscaler"
-        Log.info self.create_deployment(resource_from_yaml("dns_autoscaler.dep.yaml"))
+        Log.info self.create_deployment(resource_from_yaml("k8s/dns_autoscaler.dep.yaml"))
+      end
+
+      def update_cni
+        Log.info "updating cni"
+        Log.info self.update_daemon_set(resource_from_erb("k8s/cni_1_2_1.yaml.erb", {custom_warm_ip_target: config["warm_ip_target"]}))
       end
 
       def wait_for_cluster
@@ -59,9 +65,20 @@ module EksCli
 
       private
 
-      def resource_from_yaml(filename)
-        yaml = YAML.load_file(File.join($root_dir, "/assets/#{filename}"))
+      def resource_from_erb(filename, bindings)
+        erb = File.read(file_path(filename))
+        resolved = ERBResolver.render(erb, bindings)
+        yaml = YAML.load(resolved)
         Kubeclient::Resource.new(yaml)
+      end
+
+      def resource_from_yaml(filename)
+        yaml = YAML.load_file(file_path(filename))
+        Kubeclient::Resource.new(yaml)
+      end
+
+      def file_path(filename)
+        File.join($root_dir, "/assets/#{filename}")
       end
 
       def method_missing(method, *args, &block)

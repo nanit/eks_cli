@@ -9,7 +9,6 @@ module EksCli
   autoload :NodeGroup, 'nodegroup'
   module CloudFormation
     autoload :Stack, 'cloudformation/stack'
-    autoload :VPC, 'cloudformation/vpc'
   end
   module EKS
     autoload :Cluster, 'eks/cluster'
@@ -17,12 +16,6 @@ module EksCli
   module K8s
     autoload :Auth, 'k8s/auth'
     autoload :Client, 'k8s/client'
-  end
-  module EC2
-    autoload :SecurityGroup, 'ec2/security_group'
-  end
-  module IAM
-    autoload :Client, 'iam/client'
   end
   module Route53
     autoload :Client, 'route53/client'
@@ -46,23 +39,26 @@ module EksCli
     option :enable_gpu, type: :boolean, default: false, desc: "installs nvidia device plugin daemon set"
     option :create_default_storage_class, type: :boolean, default: true, desc: "creates a default gp2 storage class"
     option :create_dns_autoscaler, type: :boolean, default: true, desc: "creates dns autoscaler on the cluster"
+    option :warm_ip_target, type: :numeric, desc: "set a default custom warm ip target for CNI"
     def create
-      Config[cluster_name].bootstrap({region: options[:region], kubernetes_version: options[:kubernetes_version]})
-      create_eks_role
-      create_cluster_vpc
-      create_eks_cluster
-      create_cluster_security_group
+      opts = {region: options[:region],
+              kubernetes_version: options[:kubernetes_version],
+              open_ports: options[:open_ports],
+              cidr: options[:cidr],
+              warm_ip_target: options[:warm_ip_target] ? options[:warm_ip_target].to_i : nil,
+              subnet1_az: (options[:subnet1_az] || Config::AZS[options[:region]][0]),
+              subnet2_az: (options[:subnet2_az] || Config::AZS[options[:region]][1]),
+              subnet3_az: (options[:subnet3_az] || Config::AZS[options[:region]][2])}
+      config.bootstrap(opts)
+      cluster = EKS::Cluster.new(cluster_name).create
+      config.write(cluster.config)
+      cluster.update_kubeconfig
       wait_for_cluster
       enable_gpu if options[:enable_gpu]
       create_default_storage_class if options[:create_default_storage_class]
       create_dns_autoscaler if options[:create_dns_autoscaler]
+      update_cluster_cni if options[:warm_ip_target]
       say "cluster creation completed"
-    end
-
-    desc "create-eks-role", "creates an IAM role for usage by EKS"
-    def create_eks_role
-      role = IAM::Client.new(cluster_name).create_eks_role
-      Config[cluster_name].write({eks_role_arn: role.arn})
     end
 
     desc "show-config", "print cluster configuration"
@@ -75,27 +71,9 @@ module EksCli
       end
     end
 
-    desc "create-cluster-vpc", "creates a vpc according to aws cloudformation template"
-    option :cidr, type: :string, default: "192.168.0.0/16", desc: "CIRD block for cluster VPC"
-    option :subnet1_az, type: :string, desc: "availability zone for subnet 01"
-    option :subnet2_az, type: :string, desc: "availability zone for subnet 02"
-    option :subnet3_az, type: :string, desc: "availability zone for subnet 03"
-    def create_cluster_vpc
-      opts = options.slice("cidr", "subnet1_az", "subnet2_az", "subnet3_az")
-      opts["subnet1_az"] ||= Config::AZS[config["region"]][0]
-      opts["subnet2_az"] ||= Config::AZS[config["region"]][1]
-      opts["subnet3_az"] ||= Config::AZS[config["region"]][2]
-      config.write(opts, :config)
-      cfg = CloudFormation::VPC.new(cluster_name).create
-      config.write(cfg)
-    end
-
-    desc "create-eks-cluster", "create EKS cluster on AWS"
-    def create_eks_cluster
-      cluster = EKS::Cluster.new(cluster_name).create
-      cluster.await
-      Config[cluster_name].write({cluster_arn: cluster.arn})
-      cluster.update_kubeconfig
+    desc "update-cluster-cni", "updates cni with warm ip target"
+    def update_cluster_cni
+      K8s::Client.new(cluster_name).update_cni
     end
 
     desc "enable-gpu", "installs nvidia plugin as a daemonset on the cluster"
@@ -162,14 +140,6 @@ module EksCli
     option :policies, type: :array, required: true, desc: "IAM policies ARNs"
     def set_iam_policies
       Config[cluster_name].set_iam_policies(options[:policies])
-    end
-
-    desc "create-cluster-security-group", "creates a SG for cluster communication"
-    option :open_ports, type: :array, default: [], desc: "open ports on cluster nodes"
-    def create_cluster_security_group
-      open_ports = options[:open_ports].map(&:to_i)
-      gid = EC2::SecurityGroup.new(cluster_name, open_ports).create
-      Config[cluster_name].write({nodes_sg_id: gid})
     end
 
     desc "update-dns HOSTNAME K8S_SERVICE_NAME", "alters route53 CNAME records to point to k8s service ELBs"

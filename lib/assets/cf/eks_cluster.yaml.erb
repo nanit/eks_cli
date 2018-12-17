@@ -1,8 +1,12 @@
 ---
 AWSTemplateFormatVersion: '2010-09-09'
-Description: 'Amazon EKS Sample VPC'
+Description: 'Amazon EKS Cluster'
 
 Parameters:
+
+  ClusterName:
+    Type: String
+    Description: EKS cluster name
 
   VpcBlock:
     Type: String
@@ -52,6 +56,24 @@ Metadata:
           - Subnet03AZ
 
 Resources:
+
+  AWSServiceRoleForAmazonEKS:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub "${AWS::StackName}-RoleArn"
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+        - Effect: Allow
+          Principal:
+            Service:
+            - eks.amazonaws.com
+          Action:
+          - sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AmazonEKSServicePolicy
+        - arn:aws:iam::aws:policy/AmazonEKSClusterPolicy
+  
   VPC:
     Type: AWS::EC2::VPC
     Properties:
@@ -158,6 +180,49 @@ Resources:
       GroupDescription: Cluster communication with worker nodes
       VpcId: !Ref VPC
 
+  EKSCluster:
+    Type: AWS::EKS::Cluster
+    Properties:
+      Name: !Ref ClusterName
+      ResourcesVpcConfig: 
+        SecurityGroupIds:
+          - !Ref ControlPlaneSecurityGroup
+        SubnetIds:
+          - !Ref Subnet01
+          - !Ref Subnet02
+          - !Ref Subnet03
+      RoleArn: !GetAtt AWSServiceRoleForAmazonEKS.Arn
+      Version: "1.10"
+
+  NodeGroupsInClusterSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties: 
+      GroupName: !Sub "${AWS::StackName}-EKS-NodeGroups-SG"
+      GroupDescription: Allow all nodegroups to communicate with one another
+      VpcId: !Ref VPC
+
+  NodeGroupsIngressRule:
+    Type: AWS::EC2::SecurityGroupIngress
+    Properties: 
+      Description: Allow nodegroups to communicate with each other
+      FromPort: -1
+      GroupId: !Ref NodeGroupsInClusterSecurityGroup
+      IpProtocol: "-1"
+      SourceSecurityGroupId: !Ref NodeGroupsInClusterSecurityGroup
+      ToPort: -1
+
+  <% open_ports.each do |port| %>
+  NodeGroupsOpenPort<%=port%>IngressRule:
+    Type: AWS::EC2::SecurityGroupIngress
+    Properties: 
+      Description: Open port for all nodes
+      FromPort: <%=port%>
+      GroupId: !Ref NodeGroupsInClusterSecurityGroup
+      IpProtocol: tcp
+      ToPort: <%=port%>
+      CidrIp: "0.0.0.0/0"
+  <% end %>
+
 Outputs:
 
   SubnetIds:
@@ -168,7 +233,15 @@ Outputs:
     Description: Security group for the cluster control plane communication with worker nodes
     Value: !Join [ ",", [ !Ref ControlPlaneSecurityGroup ] ]
 
+  NodeGroupsInClusterSecurityGroup:
+    Description: Security group for node groups communication
+    Value: !Ref NodeGroupsInClusterSecurityGroup
+
   VpcId:
     Description: The VPC Id
     Value: !Ref VPC
+
+  EKSClusterARN:
+    Description: Create EKS Cluster
+    Value: !GetAtt EKSCluster.Arn
 

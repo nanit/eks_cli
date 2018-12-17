@@ -2,17 +2,18 @@ require 'cloudformation/stack'
 require 'config'
 require 'ipaddress'
 require 'log'
+require 'utils/erb_resolver'
 
 module EksCli
   module CloudFormation
-    class VPC
+    class EKS
 
       def initialize(cluster_name)
         @cluster_name = cluster_name
       end
 
       def create
-        Log.info "creating VPC stack for #{@cluster_name}"
+        Log.info "creating EKS stack for #{@cluster_name}"
         s = Stack.create(@cluster_name, cf_config)
         Stack.await([s])
         s.reload
@@ -20,10 +21,14 @@ module EksCli
           SecurityGroups: #{s.output("SecurityGroups")}
           VpcId: #{s.output("VpcId")}
           SubnetIds: #{s.output("SubnetIds")}
+          EKSClusterARN: #{s.output("EKSClusterARN")}
+          NodeGroupsInClusterSecurityGroup: #{s.output("NodeGroupsInClusterSecurityGroup")}
         "
         {control_plane_sg_id: s.output("SecurityGroups"),
          vpc_id: s.output("VpcId"),
-         subnets: s.output("SubnetIds").split(",")}
+         subnets: s.output("SubnetIds").split(","),
+         nodes_sg_id: s.output("NodeGroupsInClusterSecurityGroup"),
+         cluster_arn: s.output("EKSClusterARN")}
       end
 
       private
@@ -32,15 +37,19 @@ module EksCli
         {stack_name: stack_name,
          template_body: cf_template_body,
          parameters: build_params,
+         capabilities: ["CAPABILITY_NAMED_IAM"],
          tags: tags}
       end
 
       def cf_template_body
-        @cf_template_body ||= File.read(File.join($root_dir, '/assets/eks_vpc_cf_template.yaml'))
+        @cf_template_body ||= begin
+                                template = File.read(File.join($root_dir, '/assets/cf/eks_cluster.yaml.erb'))
+                                ERBResolver.render(template, {open_ports: config["open_ports"]})
+                              end
       end
 
       def stack_name
-        "#{@cluster_name}-EKS-VPC"
+        "#{@cluster_name}-EKS"
       end
 
       def tags
@@ -56,7 +65,8 @@ module EksCli
          "Subnet03Block" => subnets[2],
          "Subnet01AZ" => config["subnet1_az"],
          "Subnet02AZ" => config["subnet2_az"],
-         "Subnet03AZ" => config["subnet3_az"]}.map do |(k,v)|
+         "Subnet03AZ" => config["subnet3_az"],
+         "ClusterName" => @cluster_name}.map do |(k,v)|
           {parameter_key: k, parameter_value: v}
         end
 

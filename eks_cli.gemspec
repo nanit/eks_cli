@@ -21,8 +21,6 @@ Gem::Specification.new do |s|
   s.executables   = ["eks"]
   s.require_paths = ["lib"]
   s.add_dependency 'thor', '0.20.3'
-  s.add_dependency 'aws-sdk-iam', '1.12.0'
-  s.add_dependency 'aws-sdk-eks', '1.9.0'
   s.add_dependency 'aws-sdk-ec2', '1.62.0'
   s.add_dependency 'aws-sdk-cloudformation', '1.13.0'
   s.add_dependency 'aws-sdk-route53', '1.16.0'

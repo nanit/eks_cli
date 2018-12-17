@@ -3,7 +3,6 @@ require 'aws-sdk-autoscaling'
 require 'config'
 require 'spotinst/client'
 require 'cloudformation/stack'
-require 'iam/client'
 require 'k8s/auth'
 require 'log'
 
@@ -100,7 +99,7 @@ module EksCli
     private
 
     def cf_template_body
-      @cf_template_body ||= File.read(File.join($root_dir, '/assets/nodegroup_cf_template.yaml'))
+      @cf_template_body ||= File.read(File.join($root_dir, '/assets/cf/nodegroup.yaml'))
     end
 
     def await(stack)
