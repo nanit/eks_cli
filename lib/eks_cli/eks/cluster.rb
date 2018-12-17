@@ -1,4 +1,3 @@
-require 'aws-sdk-eks'
 require 'cloudformation/eks'
 require 'config'
 require 'log'
