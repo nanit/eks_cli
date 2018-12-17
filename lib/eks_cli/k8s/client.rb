@@ -1,3 +1,4 @@
+require 'utils/erb_resolver'
 require 'yaml'
 require 'kubeclient'
 require_relative '../log'
@@ -41,6 +42,11 @@ module EksCli
         Log.info self.create_deployment(resource_from_yaml("k8s/dns_autoscaler.dep.yaml"))
       end
 
+      def update_cni
+        Log.info "updating cni"
+        Log.info self.update_daemon_set(resource_from_erb("k8s/cni_1_2_1.yaml.erb", {custom_warm_ip_target: config["warm_ip_target"]}))
+      end
+
       def wait_for_cluster
         Log.info "waiting for cluster #{@cluster_name} to respond"
         successful_calls = 0
@@ -59,9 +65,20 @@ module EksCli
 
       private
 
-      def resource_from_yaml(filename)
-        yaml = YAML.load_file(File.join($root_dir, "/assets/#{filename}"))
+      def resource_from_erb(filename, bindings)
+        erb = File.read(file_path(filename))
+        resolved = ERBResolver.render(erb, bindings)
+        yaml = YAML.load(resolved)
         Kubeclient::Resource.new(yaml)
+      end
+
+      def resource_from_yaml(filename)
+        yaml = YAML.load_file(file_path(filename))
+        Kubeclient::Resource.new(yaml)
+      end
+
+      def file_path(filename)
+        File.join($root_dir, "/assets/#{filename}")
       end
 
       def method_missing(method, *args, &block)

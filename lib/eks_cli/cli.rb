@@ -39,11 +39,13 @@ module EksCli
     option :enable_gpu, type: :boolean, default: false, desc: "installs nvidia device plugin daemon set"
     option :create_default_storage_class, type: :boolean, default: true, desc: "creates a default gp2 storage class"
     option :create_dns_autoscaler, type: :boolean, default: true, desc: "creates dns autoscaler on the cluster"
+    option :warm_ip_target, type: :numeric, desc: "set a default custom warm ip target for CNI"
     def create
       opts = {region: options[:region],
               kubernetes_version: options[:kubernetes_version],
               open_ports: options[:open_ports],
               cidr: options[:cidr],
+              warm_ip_target: options[:warm_ip_target] ? options[:warm_ip_target].to_i : nil,
               subnet1_az: (options[:subnet1_az] || Config::AZS[options[:region]][0]),
               subnet2_az: (options[:subnet2_az] || Config::AZS[options[:region]][1]),
               subnet3_az: (options[:subnet3_az] || Config::AZS[options[:region]][2])}
@@ -55,6 +57,7 @@ module EksCli
       enable_gpu if options[:enable_gpu]
       create_default_storage_class if options[:create_default_storage_class]
       create_dns_autoscaler if options[:create_dns_autoscaler]
+      update_cluster_cni if options[:warm_ip_target]
       say "cluster creation completed"
     end
 
@@ -66,6 +69,11 @@ module EksCli
       else
         puts JSON.pretty_generate(Config[cluster_name].read_from_disk)
       end
+    end
+
+    desc "update-cluster-cni", "updates cni with warm ip target"
+    def update_cluster_cni
+      K8s::Client.new(cluster_name).update_cni
     end
 
     desc "enable-gpu", "installs nvidia plugin as a daemonset on the cluster"
