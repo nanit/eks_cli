@@ -314,6 +314,7 @@ Resources:
       ImageId: !Ref NodeImageId
       InstanceType: !Ref NodeInstanceType
       KeyName: !Ref KeyName
+      InstanceMonitoring: false
       SecurityGroups:
       - !Ref NodeSecurityGroup
       - !Ref ClusterSecurityGroup
