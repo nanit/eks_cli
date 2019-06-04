@@ -192,7 +192,7 @@ Resources:
           - !Ref Subnet02
           - !Ref Subnet03
       RoleArn: !GetAtt AWSServiceRoleForAmazonEKS.Arn
-      Version: "1.10"
+      Version: "1.12"
 
   NodeGroupsInClusterSecurityGroup:
     Type: AWS::EC2::SecurityGroup
