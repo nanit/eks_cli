@@ -25,14 +25,14 @@ module EksCli
          iam_policies: "NodeGroupIAMPolicies",
          bootstrap_args: "BootstrapArguments"}
 
-    AMIS = {"us-west-2" => "ami-07af9511082779ae7",
-            "us-east-1" => "ami-027792c3cc6de7b5b",
-            "us-east-2" => "ami-036130f4127a367f7",
+    AMIS = {"us-west-2" => "ami-0923e4b35a30a5f53",
+            "us-east-1" => "ami-0abcb9f9190e867ab",
+            "us-east-2" => "ami-04ea7cb66af82ae4a",
             "us-west-1" => "ami-03612357ac9da2c7d"}
 
-    GPU_AMIS = {"us-west-2" => "ami-08754f7ac73185331",
-                "us-east-1" => "ami-03c499c67bc65c089",
-                "us-east-2" => "ami-081210a2fd7f3c487",
+    GPU_AMIS = {"us-west-2" => "ami-0bebf2322fd52a42e",
+                "us-east-1" => "ami-0cb7959f92429410a",
+                "us-east-2" => "ami-0118b61dc2312dee2",
                 "us-west-1" => "ami-047637529a86c7237"}
 
     EKS_IAM_POLICIES = %w{AmazonEKSWorkerNodePolicy
