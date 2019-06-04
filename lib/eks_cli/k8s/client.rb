@@ -44,7 +44,7 @@ module EksCli
 
       def update_cni
         Log.info "updating cni"
-        Log.info self.update_daemon_set(resource_from_erb("k8s/cni_1_2_1.yaml.erb", {custom_warm_ip_target: config["warm_ip_target"]}))
+        Log.info self.update_daemon_set(resource_from_erb("k8s/cni_1_4_1.yaml.erb", {custom_warm_ip_target: config["warm_ip_target"]}))
       end
 
       def wait_for_cluster
