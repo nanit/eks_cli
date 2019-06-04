@@ -126,7 +126,7 @@ module EksCli
 
     desc "delete-nodegroup", "deletes cloudformation stack for nodegroup"
     option :all, type: :boolean, default: false, desc: "delete all nodegroups. can't be used with --name"
-    option :name, type: :string, desc: "delete a specific nodegroup. can't be used with --all"
+    option :group_name, type: :string, desc: "delete a specific nodegroup. can't be used with --all"
     def delete_nodegroup
       nodegroups.each(&:delete)
     end
