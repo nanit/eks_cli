@@ -1,7 +1,7 @@
-apiVersion: apps/v1
+apiVersion: extensions/v1beta1
 kind: DaemonSet
 metadata:
-  name: nvidia-device-plugin-daemonset
+  name: nvidia-device-plugin-daemonset-1.12
   namespace: kube-system
 spec:
   selector:
@@ -22,7 +22,7 @@ spec:
       # This, along with the annotation above marks this pod as a critical add-on.
       - operator: Exists
       containers:
-      - image: nvidia/k8s-device-plugin:1.10
+      - image: nvidia/k8s-device-plugin:1.11
         name: nvidia-device-plugin-ctr
         securityContext:
           allowPrivilegeEscalation: false
