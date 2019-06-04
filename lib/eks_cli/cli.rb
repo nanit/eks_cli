@@ -37,7 +37,7 @@ module EksCli
     option :subnet3_az, type: :string, desc: "availability zone for subnet 03"
     option :open_ports, type: :array, default: [], desc: "open ports on cluster nodes (eg 22 for SSH access)"
     option :enable_gpu, type: :boolean, default: false, desc: "installs nvidia device plugin daemon set"
-    option :create_default_storage_class, type: :boolean, default: true, desc: "creates a default gp2 storage class"
+    option :create_default_storage_class, type: :boolean, default: false, desc: "creates a default gp2 storage class"
     option :create_dns_autoscaler, type: :boolean, default: true, desc: "creates dns autoscaler on the cluster"
     option :warm_ip_target, type: :numeric, desc: "set a default custom warm ip target for CNI"
     def create
