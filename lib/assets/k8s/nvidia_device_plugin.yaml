@@ -20,8 +20,7 @@ spec:
       tolerations:
       # Allow this pod to be rescheduled while the node is in "critical add-ons only" mode.
       # This, along with the annotation above marks this pod as a critical add-on.
-      - key: CriticalAddonsOnly
-        operator: Exists
+      - operator: Exists
       containers:
       - image: nvidia/k8s-device-plugin:1.10
         name: nvidia-device-plugin-ctr
