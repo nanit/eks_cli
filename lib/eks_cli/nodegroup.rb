@@ -130,8 +130,12 @@ module EksCli
       @group["bootstrap_args"] = bootstrap_args
       @group["ami"] ||= default_ami
       @group["iam_policies"] = iam_policies
-      @group.except("taints").inject([]) do |params, (k, v)|
-        params << build_param(k, v)
+      @group.inject([]) do |params, (k, v)|
+        if param = build_param(k, v)
+          params << param
+        else
+          params
+        end
       end
     end
 
@@ -140,11 +144,13 @@ module EksCli
     end
 
     def bootstrap_args
-      flags = "--node-labels=kubernetes.io/role=node,eks/node-group=#{@group["group_name"].downcase}"
+      kubelet_flags = "--node-labels=kubernetes.io/role=node,eks/node-group=#{@group["group_name"].downcase}"
       if taints = @group["taints"]
-        flags = "#{flags} --register-with-taints=#{taints}"
+        kubelet_flags = "#{kubelet_flags} --register-with-taints=#{taints}"
       end
-      "--kubelet-extra-args \"#{flags}\"" 
+      flags = "--kubelet-extra-args \"#{kubelet_flags}\"" 
+      flags = "#{flags} --enable-docker-bridge" if @group["enable_docker_bridge"]
+      flags
     end
 
     def add_bootstrap_args(group)
@@ -153,8 +159,10 @@ module EksCli
     end
 
     def build_param(k, v)
-      {parameter_key: T[k.to_sym],
-       parameter_value: v.to_s}
+      if key = T[k.to_sym]
+        {parameter_key: key,
+         parameter_value: v.to_s}
+      end
     end
 
     def default_ami

@@ -62,7 +62,7 @@ module EksCli
     end
 
     def update_nodegroup(options)
-      options = options.slice("ami", "group_name", "instance_type", "subnets", "ssh_key_name", "volume_size", "taints", "min", "max", "desired")
+      options = options.slice("ami", "group_name", "instance_type", "subnets", "ssh_key_name", "volume_size", "taints", "min", "max", "enable_docker_bridge", "desired")
       raise "bad nodegroup name #{options["group_name"]}" if options["group_name"] == nil || options["group_name"].empty?
       write({groups: { options["group_name"] => options }}, :groups)
     end
