@@ -103,7 +103,7 @@ module EksCli
     option :min, type: :numeric, default: 1, desc: "minimum number of nodes on the nodegroup"
     option :max, type: :numeric, default: 1, desc: "maximum number of nodes on the nodegroup"
     option :desired, type: :numeric, default: 1, desc: "desired number of nodes on the nodegroup"
-    option :enable_docker_bridge, type: :boolean, default: false, desc: "pass --enable-docker-bridge on bootstrap.sh (https://github.com/kubernetes/kubernetes/issues/40182))"
+    option :enable_docker_bridge, type: :boolean, default: false, desc: "pass --enable-docker-bridge true on bootstrap.sh (https://github.com/kubernetes/kubernetes/issues/40182))"
     option :yes, type: :boolean, default: false, desc: "perform nodegroup creation"
     def create_nodegroup
       opts = options.dup

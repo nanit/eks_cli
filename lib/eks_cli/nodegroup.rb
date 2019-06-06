@@ -149,7 +149,7 @@ module EksCli
         kubelet_flags = "#{kubelet_flags} --register-with-taints=#{taints}"
       end
       flags = "--kubelet-extra-args \"#{kubelet_flags}\"" 
-      flags = "#{flags} --enable-docker-bridge" if @group["enable_docker_bridge"]
+      flags = "#{flags} --enable-docker-bridge true" if @group["enable_docker_bridge"]
       flags
     end
 
