@@ -53,7 +53,7 @@ module EksCli
               to_port: "-1",
               user_id_group_pairs: [
                 {
-                  description: "Accept all traffic from new EKS cluster VPC",
+                  description: "Accept all traffic from nodes on EKS cluster #{@cluster_name}",
                   group_id: config["nodes_sg_id"],
                   vpc_id: new_vpc.id,
                   vpc_peering_connection_id: peering_connection_id,
