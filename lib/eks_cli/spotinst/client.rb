@@ -1,4 +1,5 @@
 require 'httparty'
+require 'log'
 module EksCli
   module Spotinst
     class Client 
@@ -28,6 +29,16 @@ module EksCli
 
       def list_groups
         self.class.get("/aws/ec2/group?accountId=#{@account_id}")
+      end
+
+      def scale(group_id, min, max)
+        Log.info "scaling elastigroup #{group_id} {#{min}, #{max}}"
+        Log.info self.class.put("/aws/ec2/group/#{group_id}/capacity?accountId=#{@account_id}", body: {capacity: {minimum: min, maximum: max, target: max}}.to_json)
+      end
+
+      def delete_elastigroup(group_id)
+        Log.info "deleting elastigroup #{group_id}"
+        Log.info self.class.delete("/aws/ec2/group/#{group_id}?accountId=#{@account_id}")
       end
     end
   end

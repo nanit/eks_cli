@@ -57,6 +57,8 @@ module EksCli
       stack
     end
 
+    def name; @name; end
+
     def tags
       [{key: "eks-nodegroup", value: @group["group_name"]},
        {key: "eks-cluster", value: @cluster_name}]
@@ -64,6 +66,9 @@ module EksCli
 
     def delete
       cf_stack.delete
+      if @group["spotinst"]
+        spotinst.delete_elastigroup(@group["spotinst"]["id"])
+      end
     end
 
     def asg
@@ -77,7 +82,14 @@ module EksCli
     def export_to_spotinst(exact_instance_type)
       Log.info "exporting nodegroup #{@name} to spotinst"
       instance_types = exact_instance_type ? [instance_type] : nil
-      Log.info Spotinst::Client.new.import_asg(config["region"], asg, instance_types)
+      response = spotinst.import_asg(config["region"], asg, instance_types)
+      if response.code == 200
+        Log.info "Successfully created elastigroup"
+        elastigroup = response.parsed_response["response"]["items"].first
+        config.update_nodegroup({"group_name" => @name, "spotinst" => elastigroup})
+      else
+        Log.warn "Error creating elastigroup:\n #{response}"
+      end
     end
 
     def cf_stack
@@ -87,16 +99,30 @@ module EksCli
       raise e
     end
 
-    def scale(min, max)
-      Log.info "scaling #{asg}: min -> #{min}, max -> #{max}"
+    def scale(min, max, asg = true, spotinst = false)
+      scale_asg(min, max) if asg
+      scale_spotinst(min, max) if spotinst
+    end
+
+    private
+
+    def scale_spotinst(min, max)
+      if eid = @group.dig("spotinst", "id")
+        spotinst.scale(eid, min, max)
+      else
+        Log.warn "could not find spotinst elastigroup for nodegroup #{@name}"
+      end
+    end
+
+    def scale_asg(min, max)
+      Log.info "scaling ASG #{asg}: min -> #{min}, max -> #{max}"
       Log.info asg_client.update_auto_scaling_group({
         auto_scaling_group_name: asg, 
         max_size: max, 
         min_size: min
       })
-    end
 
-    private
+    end
 
     def cf_template_body
       @cf_template_body ||= File.read(File.join($root_dir, '/assets/cf/nodegroup.yaml'))
@@ -183,6 +209,10 @@ module EksCli
 
     def asg_client
       @asg_client ||= Aws::AutoScaling::Client.new(region: config["region"])
+    end
+
+    def spotinst
+      @spotinst ||= Spotinst::Client.new
     end
 
   end

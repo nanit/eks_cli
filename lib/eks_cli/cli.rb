@@ -65,9 +65,9 @@ module EksCli
     option :group_name, desc: "group name to show configuration for"
     def show_config
       if options[:group_name]
-        puts JSON.pretty_generate(Config[cluster_name].for_group(options[:group_name]))
+        puts JSON.pretty_generate(config.for_group(options[:group_name]))
       else
-        puts JSON.pretty_generate(Config[cluster_name].read_from_disk)
+        puts JSON.pretty_generate(config.read_from_disk)
       end
     end
 
@@ -117,12 +117,20 @@ module EksCli
     end
 
     desc "scale-nodegroup", "scales a nodegroup"
-    option :group_name, type: :string, required: true, desc: "nodegroup name to scale"
-    option :min, required: true, type: :numeric, desc: "Minimum number of nodes on the nodegroup"
-    option :max, required: true, type: :numeric, desc: "Maximum number of nodes on the nodegroup"
+    option :all, type: :boolean, default: false, desc: "scale all nodegroups"
+    option :group_name, type: :string, required: false, desc: "nodegroup name to scale"
+    option :min, required: false, type: :numeric, desc: "minimum number of nodes on the nodegroup. defaults to nodegroup configuration."
+    option :max, required: false, type: :numeric, desc: "maximum number of nodes on the nodegroup. default to nodegroup configuration"
+    option :spotinst, type: :boolean, default: false, desc: "scale spotinst elastigroup if such exists"
+    option :asg, type: :boolean, default: true, desc: "scale ec2 auto scaling group"
+    option :update, type: :boolean, default: false, desc: "update the nodegroup attributes"
     def scale_nodegroup
-      NodeGroup.new(cluster_name, options[:group_name]).scale(options[:min].to_i, options[:max].to_i)
-      Config[cluster_name].update_nodegroup(options)
+      nodegroups.each do |ng| 
+        min = (options[:min] || config.for_group(ng.name)["min"]).to_i
+        max = (options[:max] || config.for_group(ng.name)["max"]).to_i
+        ng.scale(min, max, options[:asg], options[:spotinst])
+        Config[cluster_name].update_nodegroup(options.slice("min", "max").merge({"group_name" => ng.name})) if options[:update]
+      end
     end
 
     desc "delete-nodegroup", "deletes cloudformation stack for nodegroup"
