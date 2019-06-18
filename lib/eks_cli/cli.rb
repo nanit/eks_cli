@@ -95,7 +95,7 @@ module EksCli
     option :all, type: :boolean, default: false, desc: "create all nodegroups. must be used in conjunction with --yes"
     option :group_name, type: :string, default: "Workers", desc: "create a specific nodegroup. can't be used with --all"
     option :ami, desc: "AMI for the nodegroup"
-    option :instance_type, default: "m5.xlarge", desc: "EC2 instance type (m5.xlarge etc...)"
+    option :instance_type, default: "m4.xlarge", desc: "EC2 instance type (m5.xlarge etc...)"
     option :subnets, type: :array, default: ["1", "2", "3"], desc: "subnets to run on. for example --subnets=1 3 will run the nodegroup on subnet1 and subnet 3"
     option :ssh_key_name, desc: "name of the default SSH key for the nodes"
     option :taints, desc: "Kubernetes taints to put on the nodes for example \"dedicated=critical:NoSchedule\""
