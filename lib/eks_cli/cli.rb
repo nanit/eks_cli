@@ -1,5 +1,6 @@
 require 'thor'
 require 'version'
+require 'log'
 
 autoload :JSON, 'json'
 
@@ -51,14 +52,13 @@ module EksCli
               subnet3_az: (options[:subnet3_az] || Config::AZS[options[:region]][2])}
       config.bootstrap(opts)
       cluster = EKS::Cluster.new(cluster_name).create
-      config.write(cluster.config)
       cluster.update_kubeconfig
       wait_for_cluster
       enable_gpu if options[:enable_gpu]
       create_default_storage_class if options[:create_default_storage_class]
       create_dns_autoscaler if options[:create_dns_autoscaler]
       update_cluster_cni if options[:warm_ip_target]
-      say "cluster creation completed"
+      Log.info "cluster creation completed"
     end
 
     desc "show-config", "print cluster configuration"
@@ -131,6 +131,11 @@ module EksCli
         ng.scale(min, max, options[:asg], options[:spotinst])
         Config[cluster_name].update_nodegroup(options.slice("min", "max").merge({"group_name" => ng.name})) if options[:update]
       end
+    end
+
+    desc "delete-cluster", "deleted cluster"
+    def delete_cluster
+      EKS::Cluster.new(cluster_name).delete
     end
 
     desc "delete-nodegroup", "deletes cloudformation stack for nodegroup"

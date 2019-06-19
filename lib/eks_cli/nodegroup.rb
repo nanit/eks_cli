@@ -65,6 +65,7 @@ module EksCli
     end
 
     def delete
+      Log.info "deleting nodegroup #{@name}"
       cf_stack.delete
       if @group["spotinst"]
         spotinst.delete_elastigroup(@group["spotinst"]["id"])

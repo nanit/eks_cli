@@ -17,7 +17,7 @@ module EksCli
         s = Stack.create(@cluster_name, cf_config)
         Stack.await([s])
         s.reload
-        puts "Outputs are:
+        Log.info "Outputs are:
           SecurityGroups: #{s.output("SecurityGroups")}
           VpcId: #{s.output("VpcId")}
           SubnetIds: #{s.output("SubnetIds")}
@@ -29,6 +29,10 @@ module EksCli
          subnets: s.output("SubnetIds").split(","),
          nodes_sg_id: s.output("NodeGroupsInClusterSecurityGroup"),
          cluster_arn: s.output("EKSClusterARN")}
+      end
+
+      def delete
+        Stack.new(@cluster_name, stack_name).delete
       end
 
       private
