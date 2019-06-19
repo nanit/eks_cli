@@ -20,9 +20,9 @@ module EksCli
       end
 
       def delete
-        delete_nodegroups
-        delete_services
         delete_vpc_peering
+        delete_services
+        delete_nodegroups
         delete_cf_stack
       end
 
@@ -48,11 +48,11 @@ module EksCli
       end
 
       def services
-        k8s_client.get_services(namespace: "default").map {|s| s[:metadata][:name]}
+        k8s_client.get_services(namespace: "default").select {|s| s[:spec][:type] == "LoadBalancer"}
       end
 
       def delete_services
-        services.each do |s|
+        services.map {|s| s[:metadata][:name]}.each do |s|
           Log.info "deleting service #{s}"
           k8s_client.delete_service(s, "default")
         end
