@@ -70,7 +70,8 @@ module EksCli
          "Subnet01AZ" => config["subnet1_az"],
          "Subnet02AZ" => config["subnet2_az"],
          "Subnet03AZ" => config["subnet3_az"],
-         "ClusterName" => @cluster_name}.map do |(k,v)|
+         "ClusterName" => @cluster_name,
+         "KubernetesVersion" => config["kubernetes_version"]}.map do |(k,v)|
           {parameter_key: k, parameter_value: v}
         end
 

@@ -7,6 +7,10 @@ Parameters:
   ClusterName:
     Type: String
     Description: EKS cluster name
+  
+  KubernetesVersion:
+    Type: String
+    Description: Kubernetes version - 1.10, 1.11, etc...
 
   VpcBlock:
     Type: String
@@ -192,7 +196,7 @@ Resources:
           - !Ref Subnet02
           - !Ref Subnet03
       RoleArn: !GetAtt AWSServiceRoleForAmazonEKS.Arn
-      Version: "1.12"
+      Version: !Ref KubernetesVersion
 
   NodeGroupsInClusterSecurityGroup:
     Type: AWS::EC2::SecurityGroup

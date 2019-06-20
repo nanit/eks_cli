@@ -25,15 +25,21 @@ module EksCli
          iam_policies: "NodeGroupIAMPolicies",
          bootstrap_args: "BootstrapArguments"}
 
-    AMIS = {"us-west-2" => "ami-0923e4b35a30a5f53",
-            "us-east-1" => "ami-0abcb9f9190e867ab",
-            "us-east-2" => "ami-04ea7cb66af82ae4a",
-            "us-west-1" => "ami-03612357ac9da2c7d"}
+    AMIS = {"1.12" => {"us-west-2" => "ami-0923e4b35a30a5f53",
+                       "us-east-1" => "ami-0abcb9f9190e867ab",
+                       "us-east-2" => "ami-04ea7cb66af82ae4a",
+                       "us-west-1" => "ami-03612357ac9da2c7d"},
+            "1.13" => {"us-west-2" => "ami-089d3b6350c1769a6",
+                       "us-east-1" => "ami-08c4955bcc43b124e",
+                       "us-east-2" => "ami-07ebcae043cf995aa"}}
 
-    GPU_AMIS = {"us-west-2" => "ami-0bebf2322fd52a42e",
-                "us-east-1" => "ami-0cb7959f92429410a",
-                "us-east-2" => "ami-0118b61dc2312dee2",
-                "us-west-1" => "ami-047637529a86c7237"}
+    GPU_AMIS = {"1.12" => {"us-west-2" => "ami-0bebf2322fd52a42e",
+                           "us-east-1" => "ami-0cb7959f92429410a",
+                           "us-east-2" => "ami-0118b61dc2312dee2",
+                           "us-west-1" => "ami-047637529a86c7237"},
+                "1.13" => {"us-west-2" => "ami-08e5329e1dbf22c6a",
+                           "us-east-1" => "ami-02af865c0f3b337f2",
+                           "us-east-2" => "ami-01f82bb66c17faf20"}}
 
     EKS_IAM_POLICIES = %w{AmazonEKSWorkerNodePolicy
                           AmazonEKS_CNI_Policy
@@ -194,9 +200,9 @@ module EksCli
 
     def default_ami
       if gpu?
-        GPU_AMIS[config["region"]]
+        GPU_AMIS[config["kubernetes_version"]][config["region"]]
       else
-        AMIS[config["region"]]
+        AMIS[config["kubernetes_version"]][config["region"]]
       end
     end
 
