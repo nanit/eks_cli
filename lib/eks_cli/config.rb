@@ -23,6 +23,7 @@ module EksCli
     end
 
     def delete
+      Log.info "deleting configuration for #{@cluster_name} at #{dir}"
       FileUtils.rm_rf(dir)
     end
 
