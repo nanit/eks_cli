@@ -22,6 +22,10 @@ module EksCli
       @cluster_name = cluster_name
     end
 
+    def delete
+      FileUtils.rm_rf(dir)
+    end
+
     def read_from_disk
       base = read(config_path)
       base["cluster_name"] = @cluster_name

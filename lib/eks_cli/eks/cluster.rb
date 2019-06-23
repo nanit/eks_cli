@@ -24,6 +24,7 @@ module EksCli
         delete_services
         delete_nodegroups
         delete_cf_stack
+        delete_config
       end
 
       def config; Config[@cluster_name]; end
@@ -34,6 +35,10 @@ module EksCli
       end
 
       private
+
+      def delete_config
+        config.delete
+      end
 
       def delete_cf_stack
         CloudFormation::EKS.new(@cluster_name).delete
