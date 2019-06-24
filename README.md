@@ -20,6 +20,7 @@ EKS cluster bootstrap with batteries included
 $ gem install eks_cli
 $ eks create --cluster-name My-EKS-Cluster --version 1.13
 $ eks create-nodegroup --cluster-name My-EKS-Cluster --group-name nodes --ssh-key-name <my-ssh-key> --yes
+$ eks delete-cluster --cluster-name My-EKS-Cluster #teardown
 ```
 
 You can type `eks` in your shell to get the full synopsis of available commands
