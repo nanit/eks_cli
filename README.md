@@ -18,7 +18,7 @@ EKS cluster bootstrap with batteries included
 
 ```
 $ gem install eks_cli
-$ eks create --cluster-name My-EKS-Cluster --version 1.13
+$ eks create --cluster-name My-EKS-Cluster --kubernetes-version 1.13
 $ eks create-nodegroup --cluster-name My-EKS-Cluster --group-name nodes --ssh-key-name <my-ssh-key> --yes
 $ eks delete-cluster --cluster-name My-EKS-Cluster
 ```
