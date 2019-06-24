@@ -133,7 +133,7 @@ module EksCli
       end
     end
 
-    desc "delete-cluster", "deleted cluster"
+    desc "delete-cluster", "deletes a cluster, including nodegroups/elastigroups and cloudformation stacks"
     def delete_cluster
       EKS::Cluster.new(cluster_name).delete
     end
