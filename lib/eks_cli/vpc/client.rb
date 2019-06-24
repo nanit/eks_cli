@@ -13,6 +13,7 @@ module EksCli
         @old_vpc = vpc_by_id(old_vpc_id)
         Log.info "setting vpc networking between #{new_vpc.id} and #{old_vpc.id}"
         peering_connection_id = create_vpc_peering_connection
+        config.write(vpc_peering_connection_id: peering_connection_id)
         update_route_tables(peering_connection_id)
         allow_networking(old_vpc_sg_id, peering_connection_id)
       end
@@ -35,6 +36,15 @@ module EksCli
         return peering_connection_id
       end
 
+      def delete_vpc_peering_connection
+        if id = config["vpc_peering_connection_id"]
+          Log.info "deleting vpc peering connection #{id}"
+          Log.info client.delete_vpc_peering_connection(vpc_peering_connection_id: id)
+        else
+          Log.info "no vpc peering connection found"
+        end
+      end
+
       def update_route_tables(peering_connection_id)
         Log.info "updating route tables"
         point_from(old_vpc, new_vpc, peering_connection_id)
@@ -53,7 +63,7 @@ module EksCli
               to_port: "-1",
               user_id_group_pairs: [
                 {
-                  description: "Accept all traffic from new EKS cluster VPC",
+                  description: "Accept all traffic from nodes on EKS cluster #{@cluster_name}",
                   group_id: config["nodes_sg_id"],
                   vpc_id: new_vpc.id,
                   vpc_peering_connection_id: peering_connection_id,

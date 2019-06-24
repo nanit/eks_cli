@@ -34,7 +34,7 @@ module EksCli
       end
 
       def delete
-        Log.info "deleting stack #{id} from cloudformation"
+        Log.info "deleting cloufdormation stack #{id}"
         client.delete_stack(stack_name: id)
       end
 

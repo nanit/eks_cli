@@ -25,15 +25,21 @@ module EksCli
          iam_policies: "NodeGroupIAMPolicies",
          bootstrap_args: "BootstrapArguments"}
 
-    AMIS = {"us-west-2" => "ami-07af9511082779ae7",
-            "us-east-1" => "ami-027792c3cc6de7b5b",
-            "us-east-2" => "ami-036130f4127a367f7",
-            "us-west-1" => "ami-03612357ac9da2c7d"}
+    AMIS = {"1.12" => {"us-west-2" => "ami-0923e4b35a30a5f53",
+                       "us-east-1" => "ami-0abcb9f9190e867ab",
+                       "us-east-2" => "ami-04ea7cb66af82ae4a",
+                       "us-west-1" => "ami-03612357ac9da2c7d"},
+            "1.13" => {"us-west-2" => "ami-089d3b6350c1769a6",
+                       "us-east-1" => "ami-08c4955bcc43b124e",
+                       "us-east-2" => "ami-07ebcae043cf995aa"}}
 
-    GPU_AMIS = {"us-west-2" => "ami-08754f7ac73185331",
-                "us-east-1" => "ami-03c499c67bc65c089",
-                "us-east-2" => "ami-081210a2fd7f3c487",
-                "us-west-1" => "ami-047637529a86c7237"}
+    GPU_AMIS = {"1.12" => {"us-west-2" => "ami-0bebf2322fd52a42e",
+                           "us-east-1" => "ami-0cb7959f92429410a",
+                           "us-east-2" => "ami-0118b61dc2312dee2",
+                           "us-west-1" => "ami-047637529a86c7237"},
+                "1.13" => {"us-west-2" => "ami-08e5329e1dbf22c6a",
+                           "us-east-1" => "ami-02af865c0f3b337f2",
+                           "us-east-2" => "ami-01f82bb66c17faf20"}}
 
     EKS_IAM_POLICIES = %w{AmazonEKSWorkerNodePolicy
                           AmazonEKS_CNI_Policy
@@ -57,13 +63,19 @@ module EksCli
       stack
     end
 
+    def name; @name; end
+
     def tags
       [{key: "eks-nodegroup", value: @group["group_name"]},
        {key: "eks-cluster", value: @cluster_name}]
     end
 
     def delete
+      Log.info "deleting nodegroup #{@name}"
       cf_stack.delete
+      if @group["spotinst"]
+        spotinst.delete_elastigroup(@group["spotinst"]["id"])
+      end
     end
 
     def asg
@@ -77,7 +89,14 @@ module EksCli
     def export_to_spotinst(exact_instance_type)
       Log.info "exporting nodegroup #{@name} to spotinst"
       instance_types = exact_instance_type ? [instance_type] : nil
-      Log.info Spotinst::Client.new.import_asg(config["region"], asg, instance_types)
+      response = spotinst.import_asg(config["region"], asg, instance_types)
+      if response.code == 200
+        Log.info "Successfully created elastigroup"
+        elastigroup = response.parsed_response["response"]["items"].first
+        config.update_nodegroup({"group_name" => @name, "spotinst" => elastigroup})
+      else
+        Log.warn "Error creating elastigroup:\n #{response}"
+      end
     end
 
     def cf_stack
@@ -87,16 +106,30 @@ module EksCli
       raise e
     end
 
-    def scale(min, max)
-      Log.info "scaling #{asg}: min -> #{min}, max -> #{max}"
+    def scale(min, max, asg = true, spotinst = false)
+      scale_asg(min, max) if asg
+      scale_spotinst(min, max) if spotinst
+    end
+
+    private
+
+    def scale_spotinst(min, max)
+      if eid = @group.dig("spotinst", "id")
+        spotinst.scale(eid, min, max)
+      else
+        Log.warn "could not find spotinst elastigroup for nodegroup #{@name}"
+      end
+    end
+
+    def scale_asg(min, max)
+      Log.info "scaling ASG #{asg}: min -> #{min}, max -> #{max}"
       Log.info asg_client.update_auto_scaling_group({
         auto_scaling_group_name: asg, 
         max_size: max, 
         min_size: min
       })
-    end
 
-    private
+    end
 
     def cf_template_body
       @cf_template_body ||= File.read(File.join($root_dir, '/assets/cf/nodegroup.yaml'))
@@ -130,8 +163,12 @@ module EksCli
       @group["bootstrap_args"] = bootstrap_args
       @group["ami"] ||= default_ami
       @group["iam_policies"] = iam_policies
-      @group.except("taints").inject([]) do |params, (k, v)|
-        params << build_param(k, v)
+      @group.inject([]) do |params, (k, v)|
+        if param = build_param(k, v)
+          params << param
+        else
+          params
+        end
       end
     end
 
@@ -140,11 +177,13 @@ module EksCli
     end
 
     def bootstrap_args
-      flags = "--node-labels=kubernetes.io/role=node,eks/node-group=#{@group["group_name"].downcase}"
+      kubelet_flags = "--node-labels=kubernetes.io/role=node,eks/node-group=#{@group["group_name"].downcase}"
       if taints = @group["taints"]
-        flags = "#{flags} --register-with-taints=#{taints}"
+        kubelet_flags = "#{kubelet_flags} --register-with-taints=#{taints}"
       end
-      "--kubelet-extra-args \"#{flags}\"" 
+      flags = "--kubelet-extra-args \"#{kubelet_flags}\"" 
+      flags = "#{flags} --enable-docker-bridge true" if @group["enable_docker_bridge"]
+      flags
     end
 
     def add_bootstrap_args(group)
@@ -153,15 +192,17 @@ module EksCli
     end
 
     def build_param(k, v)
-      {parameter_key: T[k.to_sym],
-       parameter_value: v.to_s}
+      if key = T[k.to_sym]
+        {parameter_key: key,
+         parameter_value: v.to_s}
+      end
     end
 
     def default_ami
       if gpu?
-        GPU_AMIS[config["region"]]
+        GPU_AMIS[config["kubernetes_version"]][config["region"]]
       else
-        AMIS[config["region"]]
+        AMIS[config["kubernetes_version"]][config["region"]]
       end
     end
 
@@ -175,6 +216,10 @@ module EksCli
 
     def asg_client
       @asg_client ||= Aws::AutoScaling::Client.new(region: config["region"])
+    end
+
+    def spotinst
+      @spotinst ||= Spotinst::Client.new
     end
 
   end

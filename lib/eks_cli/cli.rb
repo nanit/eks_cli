@@ -1,5 +1,6 @@
 require 'thor'
 require 'version'
+require 'log'
 
 autoload :JSON, 'json'
 
@@ -37,7 +38,7 @@ module EksCli
     option :subnet3_az, type: :string, desc: "availability zone for subnet 03"
     option :open_ports, type: :array, default: [], desc: "open ports on cluster nodes (eg 22 for SSH access)"
     option :enable_gpu, type: :boolean, default: false, desc: "installs nvidia device plugin daemon set"
-    option :create_default_storage_class, type: :boolean, default: true, desc: "creates a default gp2 storage class"
+    option :create_default_storage_class, type: :boolean, default: false, desc: "creates a default gp2 storage class"
     option :create_dns_autoscaler, type: :boolean, default: true, desc: "creates dns autoscaler on the cluster"
     option :warm_ip_target, type: :numeric, desc: "set a default custom warm ip target for CNI"
     def create
@@ -51,23 +52,22 @@ module EksCli
               subnet3_az: (options[:subnet3_az] || Config::AZS[options[:region]][2])}
       config.bootstrap(opts)
       cluster = EKS::Cluster.new(cluster_name).create
-      config.write(cluster.config)
       cluster.update_kubeconfig
       wait_for_cluster
       enable_gpu if options[:enable_gpu]
       create_default_storage_class if options[:create_default_storage_class]
       create_dns_autoscaler if options[:create_dns_autoscaler]
       update_cluster_cni if options[:warm_ip_target]
-      say "cluster creation completed"
+      Log.info "cluster creation completed"
     end
 
     desc "show-config", "print cluster configuration"
     option :group_name, desc: "group name to show configuration for"
     def show_config
       if options[:group_name]
-        puts JSON.pretty_generate(Config[cluster_name].for_group(options[:group_name]))
+        puts JSON.pretty_generate(config.for_group(options[:group_name]))
       else
-        puts JSON.pretty_generate(Config[cluster_name].read_from_disk)
+        puts JSON.pretty_generate(config.read_from_disk)
       end
     end
 
@@ -95,7 +95,7 @@ module EksCli
     option :all, type: :boolean, default: false, desc: "create all nodegroups. must be used in conjunction with --yes"
     option :group_name, type: :string, default: "Workers", desc: "create a specific nodegroup. can't be used with --all"
     option :ami, desc: "AMI for the nodegroup"
-    option :instance_type, default: "m5.xlarge", desc: "EC2 instance type (m5.xlarge etc...)"
+    option :instance_type, default: "m4.xlarge", desc: "EC2 instance type (m5.xlarge etc...)"
     option :subnets, type: :array, default: ["1", "2", "3"], desc: "subnets to run on. for example --subnets=1 3 will run the nodegroup on subnet1 and subnet 3"
     option :ssh_key_name, desc: "name of the default SSH key for the nodes"
     option :taints, desc: "Kubernetes taints to put on the nodes for example \"dedicated=critical:NoSchedule\""
@@ -103,6 +103,7 @@ module EksCli
     option :min, type: :numeric, default: 1, desc: "minimum number of nodes on the nodegroup"
     option :max, type: :numeric, default: 1, desc: "maximum number of nodes on the nodegroup"
     option :desired, type: :numeric, default: 1, desc: "desired number of nodes on the nodegroup"
+    option :enable_docker_bridge, type: :boolean, default: false, desc: "pass --enable-docker-bridge true on bootstrap.sh (https://github.com/kubernetes/kubernetes/issues/40182))"
     option :yes, type: :boolean, default: false, desc: "perform nodegroup creation"
     def create_nodegroup
       opts = options.dup
@@ -116,12 +117,25 @@ module EksCli
     end
 
     desc "scale-nodegroup", "scales a nodegroup"
-    option :group_name, type: :string, required: true, desc: "nodegroup name to scale"
-    option :min, required: true, type: :numeric, desc: "Minimum number of nodes on the nodegroup"
-    option :max, required: true, type: :numeric, desc: "Maximum number of nodes on the nodegroup"
+    option :all, type: :boolean, default: false, desc: "scale all nodegroups"
+    option :group_name, type: :string, required: false, desc: "nodegroup name to scale"
+    option :min, required: false, type: :numeric, desc: "minimum number of nodes on the nodegroup. defaults to nodegroup configuration."
+    option :max, required: false, type: :numeric, desc: "maximum number of nodes on the nodegroup. default to nodegroup configuration"
+    option :spotinst, type: :boolean, default: false, desc: "scale spotinst elastigroup if such exists"
+    option :asg, type: :boolean, default: true, desc: "scale ec2 auto scaling group"
+    option :update, type: :boolean, default: false, desc: "update the nodegroup attributes"
     def scale_nodegroup
-      NodeGroup.new(cluster_name, options[:group_name]).scale(options[:min].to_i, options[:max].to_i)
-      Config[cluster_name].update_nodegroup(options)
+      nodegroups.each do |ng| 
+        min = (options[:min] || config.for_group(ng.name)["min"]).to_i
+        max = (options[:max] || config.for_group(ng.name)["max"]).to_i
+        ng.scale(min, max, options[:asg], options[:spotinst])
+        Config[cluster_name].update_nodegroup(options.slice("min", "max").merge({"group_name" => ng.name})) if options[:update]
+      end
+    end
+
+    desc "delete-cluster", "deleted cluster"
+    def delete_cluster
+      EKS::Cluster.new(cluster_name).delete
     end
 
     desc "delete-nodegroup", "deletes cloudformation stack for nodegroup"

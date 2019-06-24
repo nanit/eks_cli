@@ -17,7 +17,7 @@ module EksCli
         s = Stack.create(@cluster_name, cf_config)
         Stack.await([s])
         s.reload
-        puts "Outputs are:
+        Log.info "Outputs are:
           SecurityGroups: #{s.output("SecurityGroups")}
           VpcId: #{s.output("VpcId")}
           SubnetIds: #{s.output("SubnetIds")}
@@ -29,6 +29,10 @@ module EksCli
          subnets: s.output("SubnetIds").split(","),
          nodes_sg_id: s.output("NodeGroupsInClusterSecurityGroup"),
          cluster_arn: s.output("EKSClusterARN")}
+      end
+
+      def delete
+        Stack.new(@cluster_name, stack_name).delete
       end
 
       private
@@ -66,7 +70,8 @@ module EksCli
          "Subnet01AZ" => config["subnet1_az"],
          "Subnet02AZ" => config["subnet2_az"],
          "Subnet03AZ" => config["subnet3_az"],
-         "ClusterName" => @cluster_name}.map do |(k,v)|
+         "ClusterName" => @cluster_name,
+         "KubernetesVersion" => config["kubernetes_version"]}.map do |(k,v)|
           {parameter_key: k, parameter_value: v}
         end
 
