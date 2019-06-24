@@ -2,6 +2,7 @@ require 'json'
 require_relative 'log'
 require 'active_support/core_ext/hash'
 require 'fileutils'
+require 'aws-sdk-s3'
 module EksCli
   class Config
 
@@ -16,6 +17,13 @@ module EksCli
         new(cluster_name)
       end
 
+      def s3_bucket=(bucket)
+        @s3_bucket = bucket
+      end
+
+      def s3_bucket
+        @s3_bucket || raise("no s3 bucket set")
+      end
     end
 
     def initialize(cluster_name)
@@ -24,7 +32,10 @@ module EksCli
 
     def delete
       Log.info "deleting configuration for #{@cluster_name} at #{dir}"
-      FileUtils.rm_rf(dir)
+      s3.delete_object(bucket: s3_bucket, key: config_path)
+      s3.delete_object(bucket: s3_bucket, key: state_path)
+      s3.delete_object(bucket: s3_bucket, key: groups_path)
+      s3.delete_object(bucket: s3_bucket, key: dir)
     end
 
     def read_from_disk
@@ -91,33 +102,37 @@ module EksCli
     end
 
     def write_to_file(attrs, path)
-      File.open(path, 'w') {|file| file.write(attrs.to_json)}
+      s3.put_object(bucket: s3_bucket, key: path, body: attrs.to_json)
     end
 
     def read(path)
-      f = File.read(path)
-      JSON.parse(f)
+      resp = s3.get_object(bucket: s3_bucket, key: path)
+      body = resp.body.read
+      JSON.parse(body)
     end
 
     def groups_path
-      with_config_dir { |dir| "#{dir}/groups.json" }
+      "#{dir}/groups.json"
     end
 
     def state_path
-      with_config_dir { |dir| "#{dir}/state.json" }
+      "#{dir}/state.json"
     end
 
     def config_path
-      with_config_dir { |dir| "#{dir}/config.json" }
+      "#{dir}/config.json"
     end
 
     def dir
-      "#{ENV['HOME']}/.eks/#{@cluster_name}"
+      "eks-cli/#{@cluster_name}"
     end
 
-    def with_config_dir
-      FileUtils.mkdir_p(dir)
-      yield dir
+    def s3_bucket
+      self.class.s3_bucket
+    end
+
+    def s3
+      @s3 ||= Aws::S3::Client.new
     end
 
   end
