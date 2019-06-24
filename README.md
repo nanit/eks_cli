@@ -10,15 +10,15 @@ EKS cluster bootstrap with batteries included
 * Manage IAM policies that will be attached to your nodes
 * Easily configure docker repository secrets to allow pulling private images
 * Manage Route53 DNS records to point at your Kubernetes services
-* Export nodegroups to SporInst Elastigroups
+* Export nodegroups to SpotInst Elastigroups
 * Auto resolving AMIs by region & instance types (GPU enabled AMIs)
-* Even more...
+* Supports both kubernetes 1.12 and 1.13
 
 ## Usage
 
 ```
 $ gem install eks_cli
-$ eks create --cluster-name My-EKS-Cluster
+$ eks create --cluster-name My-EKS-Cluster --version 1.13
 $ eks create-nodegroup --cluster-name My-EKS-Cluster --group-name nodes --ssh-key-name <my-ssh-key> --yes
 ```
 
@@ -28,32 +28,28 @@ You can type `eks` in your shell to get the full synopsis of available commands
 Commands:
   eks add-iam-user IAM_ARN                                     # adds an IAM user as an authorized member on the EKS cluster
   eks create                                                   # creates a new EKS cluster
-  eks create-cluster-security-group                            # creates a SG for cluster communication
-  eks create-cluster-vpc                                       # creates a vpc according to aws cloudformation template
   eks create-default-storage-class                             # creates default storage class on a new k8s cluster
   eks create-dns-autoscaler                                    # creates kube dns autoscaler
-  eks create-eks-cluster                                       # create EKS cluster on AWS
-  eks create-eks-role                                          # creates an IAM role for usage by EKS
   eks create-nodegroup                                         # creates all nodegroups on environment
+  eks delete-cluster                                           # deletes a cluster, including nodegroups
   eks delete-nodegroup                                         # deletes cloudformation stack for nodegroup
-  eks detach-iam-policies                                      # detaches added policies to nodegroup IAM Role
   eks enable-gpu                                               # installs nvidia plugin as a daemonset on the cluster
   eks export-nodegroup                                         # exports nodegroup auto scaling group to spotinst
   eks help [COMMAND]                                           # Describe available commands or one specific command
-  eks scale-nodegroup --group-name=GROUP_NAME --max=N --min=N  # scales a nodegroup
+  eks scale-nodegroup                                          # scales a nodegroup
   eks set-docker-registry-credentials USERNAME PASSWORD EMAIL  # sets docker registry credentials
   eks set-iam-policies --policies=one two three                # sets IAM policies to be attached to created nodegroups
   eks set-inter-vpc-networking TO_VPC_ID TO_SG_ID              # creates a vpc peering connection, sets route tables and allows network access on SG
   eks show-config                                              # print cluster configuration
   eks update-auth                                              # update aws auth configmap to allow all nodegroups to connect to control plane
+  eks update-cluster-cni                                       # updates cni with warm ip target
   eks update-dns HOSTNAME K8S_SERVICE_NAME                     # alters route53 CNAME records to point to k8s service ELBs
   eks version                                                  # prints eks_cli version
   eks wait-for-cluster                                         # waits until cluster responds to HTTP requests
 
 Options:
-  c, --cluster-name=CLUSTER_NAME 
+  c, --cluster-name=CLUSTER_NAME  
 ```
-
 ## Prerequisites
 
 1. Ruby
@@ -122,7 +118,7 @@ Creates a standard gp2 default storage class named gp2
 
 `$ eks create-dns-autoscaler --cluster-name My-EKS-Cluster`
 
-Creates kube-dns autoscaler with sane defaults
+Creates coredns autoscaler with production defaults
 
 ### Connecting to an existing VPC
 
