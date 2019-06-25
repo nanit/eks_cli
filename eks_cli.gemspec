@@ -21,6 +21,7 @@ Gem::Specification.new do |s|
   s.executables   = ["eks"]
   s.require_paths = ["lib"]
   s.add_dependency 'aws-sdk-s3', '~> 1'
+  s.add_dependency 'aws-sdk-elasticloadbalancing', '~> 1'
   s.add_dependency 'thor', '0.20.3'
   s.add_dependency 'aws-sdk-ec2', '1.62.0'
   s.add_dependency 'aws-sdk-cloudformation', '1.13.0'
