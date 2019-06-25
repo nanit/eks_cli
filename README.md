@@ -63,12 +63,14 @@ Options:
 
 ## Environment variables
 
-You are encouraged to use both `EKS_CLI_CLUSTER_NAME` and `EKS_CLI_S3_BUCKET` environment variables instead of using the corresponding flags on each command. It makes the command clearer and reduces the chance for typos.
+You are encouraged to export both `EKS_CLI_CLUSTER_NAME` and `EKS_CLI_S3_BUCKET` environment variables instead of using the corresponding flags on each command. It makes the command clearer and reduces the chance for typos.
 The following selected commands assumes you have exported both environment variables:
 ```bash
 export EKS_CLI_S3_BUCKET=my-eks-config-bucket
 export EKS_CLI_CLUSTER_NAME=my-eks-cluster
 ```
+
+`EKS_CLI_S3_BUCKET` can be safely put in your `~/.bash_profile` and `EKS_CLI_CLUSTER_NAME` may be exported on a cluster basis
 
 ## Selected Commands
 
