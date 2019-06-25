@@ -13,14 +13,15 @@ EKS cluster bootstrap with batteries included
 * Export nodegroups to SpotInst Elastigroups
 * Auto resolving AMIs by region & instance types (GPU enabled AMIs)
 * Supports both kubernetes 1.12 and 1.13
+* Configuration is saved on S3 for easy collaboration
 
 ## Usage
 
 ```
 $ gem install eks_cli
-$ eks create --cluster-name My-EKS-Cluster --kubernetes-version 1.13
-$ eks create-nodegroup --cluster-name My-EKS-Cluster --group-name nodes --ssh-key-name <my-ssh-key> --yes
-$ eks delete-cluster --cluster-name My-EKS-Cluster
+$ eks create --kubernetes-version 1.13 --cluster-name my-eks-cluster --s3-bucket my-eks-config-bucket
+$ eks create-nodegroup --cluster-name my-eks-cluster --group-name nodes --ssh-key-name <my-ssh-key> --s3-bucket my-eks-config-bucket --yes
+$ eks delete-cluster --cluster-name my-eks-cluster --s3-bucket my-eks-config-bucket
 ```
 
 You can type `eks` in your shell to get the full synopsis of available commands
@@ -49,7 +50,8 @@ Commands:
   eks wait-for-cluster                                         # waits until cluster responds to HTTP requests
 
 Options:
-  c, --cluster-name=CLUSTER_NAME  
+  c, [--cluster-name=CLUSTER_NAME]  # eks cluster name (env: EKS_CLI_CLUSTER_NAME)
+  s3, [--s3-bucket=S3_BUCKET]       # s3 bucket name to save configurtaion and state (env: EKS_CLI_S3_BUCKET)
 ```
 ## Prerequisites
 
@@ -57,6 +59,18 @@ Options:
 2. [kubectl](https://kubernetes.io/docs/tasks/tools/install-kubectl/) version >= 10 on your `PATH`
 3. [aws-iam-authenticator](https://github.com/kubernetes-sigs/aws-iam-authenticator) on your `PATH`
 4. [aws-cli](https://docs.aws.amazon.com/cli/latest/userguide/installing.html) version >= 1.16.18 on your `PATH`
+5. S3 bucket with write/read permissions to store configuration
+
+## Environment variables
+
+You are encouraged to export both `EKS_CLI_CLUSTER_NAME` and `EKS_CLI_S3_BUCKET` environment variables instead of using the corresponding flags on each command. It makes the command clearer and reduces the chance for typos.
+The following selected commands assumes you have exported both environment variables:
+```bash
+export EKS_CLI_S3_BUCKET=my-eks-config-bucket
+export EKS_CLI_CLUSTER_NAME=my-eks-cluster
+```
+
+`EKS_CLI_S3_BUCKET` can be safely put in your `~/.bash_profile` and `EKS_CLI_CLUSTER_NAME` may be exported on a cluster basis
 
 ## Selected Commands
 
@@ -71,30 +85,30 @@ Nodes in different nodegroups may communicate freely thanks to a shared Security
 
 Scale nodegroups up and down using
 
-`$ eks scale-nodegroup --cluster-name My-EKS-Cluster --group-name nodes --min 1 --max 10`
+`$ eks scale-nodegroup --group-name nodes --min 1 --max 10`
 
 ### Authorize an IAM user to access the cluster
 
-`$ eks add-iam-user arn:aws:iam::XXXXXXXX:user/XXXXXXXX --cluster-name=My-EKS-Cluster --yes`
+`$ eks add-iam-user arn:aws:iam::XXXXXXXX:user/XXXXXXXX --yes`
 
 Edits `aws-auth` configmap and updates it on EKS to allow an IAM user access the cluster via `kubectl`
 
 ### Setting IAM policies to be attached to EKS nodes
 
-`$ eks set-iam-policies --cluster-name=My-EKS-Cluster --policies=AmazonS3FullAccess AmazonDynamoDBFullAccess`
+`$ eks set-iam-policies --policies=AmazonS3FullAccess AmazonDynamoDBFullAccess`
 
 Sets IAM policies to be attached to nodegroups once created.
 This settings does not work retro-actively - only affects future `eks create-nodegroup` commands.
 
 ### Routing Route53 hostnames to Kubernetes service
 
-`$ eks update-dns my-cool-service.my-company.com cool-service --route53-hosted-zone-id=XXXXX --elb-hosted-zone-id=XXXXXX --cluster-name=My-EKS-Cluster`
+`$ eks update-dns my-cool-service.my-company.com cool-service --route53-hosted-zone-id=XXXXX --elb-hosted-zone-id=XXXXXX`
 
 Takes the ELB endpoint from `cool-service` and puts it as an alias record of `my-cool-service.my-company.com` on Route53
 
 ### Enabling GPU
 
-`$ eks enable-gpu --cluster-name EKS-Staging`
+`$ eks enable-gpu`
 
 Installs the nvidia device plugin required to have your GPUs exposed
 
@@ -105,19 +119,19 @@ Installs the nvidia device plugin required to have your GPUs exposed
 
 ### Adding Dockerhub Secrets
 
-`$ eks set-docker-registry-credentials <dockerhub-user> <dockerhub-password> <dockerhub-email> --cluster-name My-EKS-Cluster`
+`$ eks set-docker-registry-credentials <dockerhub-user> <dockerhub-password> <dockerhub-email>`
 
 Adds your dockerhub credentials as a secret and attaches it to the default ServiceAccount's imagePullSecrets
 
 ### Creating Default Storage Class
 
-`$ eks create-default-storage-class --cluster-name My-EKS-Cluster`
+`$ eks create-default-storage-class`
 
 Creates a standard gp2 default storage class named gp2
 
 ### Installing DNS autoscaler
 
-`$ eks create-dns-autoscaler --cluster-name My-EKS-Cluster`
+`$ eks create-dns-autoscaler`
 
 Creates coredns autoscaler with production defaults
 

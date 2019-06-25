@@ -1,5 +1,6 @@
 require 'cloudformation/eks'
 require 'vpc/client'
+require 'aws-sdk-elasticloadbalancing'
 require 'config'
 require 'nodegroup'
 require 'log'
@@ -34,6 +35,10 @@ module EksCli
         Log.info `aws eks update-kubeconfig --name=#{@cluster_name} --region=#{config["region"]}`
       end
 
+      def services
+        k8s_client.get_services(namespace: "default").select {|s| s[:spec][:type] == "LoadBalancer"}
+      end
+
       private
 
       def delete_config
@@ -52,14 +57,14 @@ module EksCli
         @k8s_client ||= EksCli::K8s::Client.new(@cluster_name)
       end
 
-      def services
-        k8s_client.get_services(namespace: "default").select {|s| s[:spec][:type] == "LoadBalancer"}
-      end
-
       def delete_services
-        services.map {|s| s[:metadata][:name]}.each do |s|
-          Log.info "deleting service #{s}"
-          k8s_client.delete_service(s, "default")
+        services.each do |s|
+          name = s[:metadata][:name]
+          elb = s[:status][:loadBalancer][:ingress].first[:hostname].split("-").first
+          Log.info "deleting ELB #{elb}"
+          elb_client.delete_load_balancer(load_balancer_name: elb)
+          Log.info "deleting service #{name}"
+          k8s_client.delete_service(name, "default")
         end
       end
 
@@ -69,6 +74,10 @@ module EksCli
 
       def delete_nodegroups
         nodegroups.keys.each {|n| NodeGroup.new(@cluster_name, n).delete}
+      end
+
+      def elb_client
+        @elb_client ||= Aws::ElasticLoadBalancing::Client.new(region: config["region"])
       end
 
     end
