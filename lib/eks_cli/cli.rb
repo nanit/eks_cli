@@ -26,6 +26,7 @@ module EksCli
   end
 
   class Cli < Thor
+    RED=31
 
     class_option :cluster_name, required: false, aliases: :c, desc: 'eks cluster name (env: EKS_CLI_CLUSTER_NAME)'
     class_option :s3_bucket, required: false, aliases: :s3, desc: "s3 bucket name to save configurtaion and state (env: EKS_CLI_S3_BUCKET)"
@@ -146,7 +147,13 @@ module EksCli
 
     desc "delete-cluster", "deletes a cluster, including nodegroups/elastigroups, elbs, kubernetes services and cloudformation stacks"
     def delete_cluster
-      with_context { EKS::Cluster.new(cluster_name).delete }
+      answer = ask("you are about to delete EKS cluster #{bold(underline(colorize(cluster_name, RED)))} including nodegroups/elastigroups, elbs, kubernetes services and cloudformation stacks.\nare you 100% sure you want to proceed? (y/N)")
+      if answer == "y"
+        Log.info "deleting cluster #{cluster_name}"
+        with_context { EKS::Cluster.new(cluster_name).delete }
+      else
+        Log.info "aborted"
+      end
     end
 
     desc "delete-nodegroup", "deletes cloudformation stack for nodegroup"
@@ -244,6 +251,18 @@ module EksCli
 
       def env_param_name(k)
         "EKS_CLI_#{k.to_s.upcase}"
+      end
+
+      def colorize(s, color_code)
+        "\e[#{color_code}m#{s}\e[0m"
+      end
+
+      def underline(s)
+        "\e[4m#{s}\e[0m"
+      end
+
+      def bold(s)
+        "\e[1m#{s}\e[0m"
       end
     end
 
