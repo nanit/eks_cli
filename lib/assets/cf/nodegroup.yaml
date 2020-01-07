@@ -323,6 +323,9 @@ Resources:
           !Sub |
             #!/bin/bash
             set -o xtrace
+            sudo sysctl -w net.ipv4.neigh.default.gc_thresh1=8096
+            sudo sysctl -w net.ipv4.neigh.default.gc_thresh2=12288
+            sudo sysctl -w net.ipv4.neigh.default.gc_thresh3=16384
             /etc/eks/bootstrap.sh ${ClusterName} ${BootstrapArguments}
 
 Outputs:
