@@ -326,7 +326,7 @@ Resources:
             sudo bash -c 'echo "net.ipv4.neigh.default.gc_thresh1 = 8096" >> /etc/sysctl.conf'
             sudo bash -c 'echo "net.ipv4.neigh.default.gc_thresh2 = 12288" >> /etc/sysctl.conf'
             sudo bash -c 'echo "net.ipv4.neigh.default.gc_thresh3 = 16384" >> /etc/sysctl.conf'
-            sudo sysctl -w net.netfilter.nf_conntrack_max=262144
+            sudo bash -c 'echo "net.netfilter.nf_conntrack_max=262144" >> /etc/sysctl.conf'
             sudo sysctl -p /etc/sysctl.conf
             /etc/eks/bootstrap.sh ${ClusterName} ${BootstrapArguments}
 
