@@ -27,7 +27,7 @@ Gem::Specification.new do |s|
   s.add_dependency 'aws-sdk-cloudformation', '1.13.0'
   s.add_dependency 'aws-sdk-route53', '1.16.0'
   s.add_dependency 'aws-sdk-autoscaling','1.13.0'
-  s.add_dependency 'activesupport', '5.2.1.1'
+  s.add_dependency 'activesupport', '6.0.3.1'
   s.add_dependency 'kubeclient', '4.1.0'
   s.add_dependency 'httparty', '0.16.3'
   s.add_dependency 'ipaddress', '0.8.3'
